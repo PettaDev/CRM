@@ -1154,6 +1154,117 @@ textarea.input {
   padding: 80px 20px;
 }
 
+/* ── Abas do painel lateral (inbox) ───────────────────────────────────────── */
+
+.side-seg {
+  width: 100%;
+}
+.side-seg .seg-btn {
+  flex: 1;
+  text-align: center;
+}
+
+/* ── Página pública do formulário do cliente ──────────────────────────────── */
+
+.form-page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+}
+.form-page-card {
+  width: 100%;
+  max-width: 560px;
+  height: fit-content;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.form-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.form-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 6px;
+}
+.form-grid.bare {
+  padding: 0;
+}
+.input.locked {
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.callout {
+  background: var(--brand-light);
+  border: 1px solid #d3e4ff;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.callout strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.callout code {
+  font-family: var(--mono);
+  background: #fff;
+  border: 1px solid #cfe0ff;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.consent input {
+  margin-top: 1px;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  accent-color: var(--brand);
+}
+.form-success {
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 26px;
+}
+.form-success-check {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  color: var(--green);
+  font-size: 30px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
 /* ── Responsivo ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {

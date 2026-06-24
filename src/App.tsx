@@ -6,6 +6,7 @@ import Inbox from "./pages/Inbox";
 import Cases from "./pages/Cases";
 import CaseDetail from "./pages/CaseDetail";
 import Automations from "./pages/Automations";
+import ClientForm from "./pages/ClientForm";
 
 // SPA com roteamento por hash (funciona em hospedagem estática como GitHub Pages).
 export default function App() {
@@ -13,6 +14,8 @@ export default function App() {
     <CrmProvider>
       <HashRouter>
         <Routes>
+          {/* Página pública do formulário (sem sidebar) — link enviado ao cliente */}
+          <Route path="form/:token" element={<ClientForm />} />
           <Route element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="inbox" element={<Inbox />} />
