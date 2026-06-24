@@ -1,4 +1,4 @@
-import type { Agent, Conversation, ServiceCase } from "../types";
+import type { Agent, Client, Conversation, ServiceCase } from "../types";
 
 // Datas relativas a "agora" para deixar a UI (há X min/h/d) realista.
 const h = (hours: number): string =>
@@ -409,5 +409,110 @@ export const CONVERSATIONS: Conversation[] = [
       { id: "m1", from: "cliente", text: "A bateria do Note 40 não dura nada.", at: d(2) },
       { id: "m2", from: "agente", text: "Identificamos que a bateria precisa ser substituída. Já solicitamos a peça ao estoque.", at: h(20) },
     ],
+  },
+];
+
+// ───────────────────────────────────────────────────────────────────────────
+// Clientes (associados pelo número de WhatsApp = telefoneKey)
+// ───────────────────────────────────────────────────────────────────────────
+
+export const CLIENTS: Client[] = [
+  // Cadastros já preenchidos
+  {
+    telefone: "+55 11 98123-4567",
+    telefoneKey: "5511981234567",
+    formStatus: "preenchido",
+    enviadoAt: d(3),
+    preenchidoAt: d(3),
+    form: {
+      nomeCompleto: "Marcos Andrade Silva",
+      cpf: "123.456.789-00",
+      nascimento: "1990-03-12",
+      email: "marcos.andrade@email.com",
+      cep: "01310-200",
+      rua: "Av. Paulista",
+      numero: "1578",
+      bairro: "Bela Vista",
+      cidade: "São Paulo",
+      estado: "SP",
+      marca: "TECNO",
+      modelo: "Spark 20 Pro",
+      imei1: "356938035643809",
+      imei2: "356938035643817",
+      sn: "TSP20P24A001923",
+      notaFiscal: "NF-882431",
+      consentimentoLgpd: true,
+    },
+  },
+  {
+    telefone: "+55 41 99111-2020",
+    telefoneKey: "5541991112020",
+    formStatus: "preenchido",
+    enviadoAt: d(5),
+    preenchidoAt: d(5),
+    form: {
+      nomeCompleto: "Patrícia Gomes de Oliveira",
+      cpf: "987.654.321-00",
+      nascimento: "1985-11-02",
+      email: "patricia.gomes@email.com",
+      cep: "80010-010",
+      rua: "Rua XV de Novembro",
+      numero: "420",
+      bairro: "Centro",
+      cidade: "Curitiba",
+      estado: "PR",
+      marca: "TECNO",
+      modelo: "Camon 30",
+      imei1: "356112998745120",
+      imei2: "356112998745138",
+      sn: "TCAM30A5512XK",
+      notaFiscal: "NF-771209",
+      consentimentoLgpd: true,
+    },
+  },
+  {
+    telefone: "+55 21 99876-1122",
+    telefoneKey: "5521998761122",
+    formStatus: "preenchido",
+    enviadoAt: d(2),
+    preenchidoAt: h(20),
+    form: {
+      nomeCompleto: "Juliana Prado Martins",
+      cpf: "456.789.123-00",
+      nascimento: "1993-07-21",
+      email: "ju.prado@email.com",
+      cep: "22041-001",
+      rua: "Av. N. S. de Copacabana",
+      numero: "905",
+      bairro: "Copacabana",
+      cidade: "Rio de Janeiro",
+      estado: "RJ",
+      marca: "Infinix",
+      modelo: "Note 40",
+      imei1: "351265430987612",
+      imei2: "351265430987620",
+      sn: "INF40N9921Q7",
+      notaFiscal: "NF-665512",
+      consentimentoLgpd: true,
+    },
+  },
+  // Formulário enviado, aguardando o cliente preencher
+  {
+    telefone: "+55 51 98444-3311",
+    telefoneKey: "5551984443311",
+    formStatus: "enviado",
+    enviadoAt: h(1),
+  },
+  {
+    telefone: "+55 11 96000-7788",
+    telefoneKey: "5511960007788",
+    formStatus: "enviado",
+    enviadoAt: h(2.5),
+  },
+  // Ainda não enviado (para demonstrar o disparo)
+  {
+    telefone: "+55 11 95555-0001",
+    telefoneKey: "5511955550001",
+    formStatus: "nao_enviado",
   },
 ];

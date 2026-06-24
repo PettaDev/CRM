@@ -10,6 +10,12 @@ interface Rule {
 
 const RULES: Rule[] = [
   {
+    nome: "Cadastro do cliente",
+    gatilho: "Primeiro contato de um número sem cadastro",
+    acao: "Envia o formulário (dados + IMEI 1/2 + SN) e associa ao nº de WhatsApp",
+    ativo: true,
+  },
+  {
     nome: "Início do atendimento",
     gatilho: "Novo caso criado a partir do WhatsApp",
     acao: "Envia confirmação com nº do atendimento e defeito relatado",

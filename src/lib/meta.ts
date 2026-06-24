@@ -1,4 +1,10 @@
-import type { Area, CaseStatus, DeviceBrand, ServiceCase } from "../types";
+import type {
+  Area,
+  CaseStatus,
+  DeviceBrand,
+  FormStatus,
+  ServiceCase,
+} from "../types";
 
 // ───────────────────────────────────────────────────────────────────────────
 // Metadados visuais e textuais do domínio.
@@ -116,3 +122,26 @@ export function templateFinalizacao(c: ServiceCase): string {
     `Já pode retirar na unidade de ${c.cidade}/${c.estado}. Obrigado por escolher a Carlcare!`
   );
 }
+
+export function templateFormulario(nome: string, link: string): string {
+  return (
+    `Olá, ${nome.split(" ")[0]}! 👋 Aqui é a Carlcare.\n` +
+    `Para agilizar seu atendimento, precisamos de alguns dados do aparelho. ` +
+    `É rápido e seguro — preencha pelo link:\n${link}`
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Cliente / cadastro
+// ───────────────────────────────────────────────────────────────────────────
+
+// Normaliza o telefone para somente dígitos — chave de associação na plataforma.
+export function phoneKey(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+export const FORM_STATUS_META: Record<FormStatus, { label: string; color: string }> = {
+  nao_enviado: { label: "Cadastro não enviado", color: "#64748b" },
+  enviado: { label: "Aguardando preenchimento", color: "#f59e0b" },
+  preenchido: { label: "Cadastro preenchido", color: "#16a34a" },
+};

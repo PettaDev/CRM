@@ -4,19 +4,24 @@ import { useCrm } from "../context/CrmContext";
 import StatusBadge from "../components/StatusBadge";
 import { IconSend } from "../components/icons";
 import {
+  FORM_STATUS_META,
   maskImei,
+  phoneKey,
   templateFinalizacao,
   templateInicio,
   timeAgo,
+  formatDateTime,
   formatTime,
 } from "../lib/meta";
+import type { Client, FormStatus } from "../types";
 
 export default function Inbox() {
-  const { conversations, cases, sendMessage, markRead } = useCrm();
+  const { conversations, cases, clients, sendMessage, markRead, sendForm } = useCrm();
   const [selectedId, setSelectedId] = useState<string>(
     conversations[0] ? conversations[0].id : ""
   );
   const [draft, setDraft] = useState("");
+  const [sideTab, setSideTab] = useState<"caso" | "cliente">("caso");
 
   const ordered = useMemo(
     () => [...conversations].sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
@@ -25,6 +30,9 @@ export default function Inbox() {
 
   const conversa = conversations.find((c) => c.id === selectedId);
   const caso = conversa ? cases.find((c) => c.id === conversa.caseId) : undefined;
+  const client = conversa
+    ? clients.find((c) => c.telefoneKey === phoneKey(conversa.telefone))
+    : undefined;
 
   function selecionar(idConv: string) {
     setSelectedId(idConv);
@@ -108,6 +116,9 @@ export default function Inbox() {
 
           <div className="composer">
             <div className="composer-quick">
+              <button className="chip-btn" onClick={() => sendForm(conversa.id)}>
+                Enviar formulário
+              </button>
               {caso && (
                 <>
                   <button className="chip-btn" onClick={() => enviar(templateInicio(caso))}>
@@ -144,38 +155,170 @@ export default function Inbox() {
         </div>
       )}
 
-      {/* Painel do caso */}
-      {caso && (
+      {/* Painel lateral: Caso | Cliente */}
+      {conversa && (
         <aside className="inbox-side">
-          <div className="inbox-side-head">
-            <span className="info-card-title">Caso vinculado</span>
-            <StatusBadge status={caso.status} />
+          <div className="seg side-seg">
+            <button
+              className={"seg-btn" + (sideTab === "caso" ? " active" : "")}
+              onClick={() => setSideTab("caso")}
+            >
+              Caso
+            </button>
+            <button
+              className={"seg-btn" + (sideTab === "cliente" ? " active" : "")}
+              onClick={() => setSideTab("cliente")}
+            >
+              Cliente
+            </button>
           </div>
-          <dl className="kv">
-            <dt>Atendimento</dt>
-            <dd className="mono">{caso.id}</dd>
-            <dt>Aparelho</dt>
-            <dd>
-              {caso.marca} {caso.modelo}
-            </dd>
-            <dt>IMEI</dt>
-            <dd className="mono">{maskImei(caso.imei)}</dd>
-            <dt>Cidade/UF</dt>
-            <dd>
-              {caso.cidade}/{caso.estado}
-            </dd>
-            <dt>Área</dt>
-            <dd>
-              <span className="chip">{caso.area}</span>
-            </dd>
-            <dt>Defeito</dt>
-            <dd>{caso.defeito}</dd>
-          </dl>
-          <Link to={`/casos/${caso.id}`} className="btn btn-ghost full">
-            Abrir caso completo
-          </Link>
+
+          {sideTab === "caso" ? (
+            caso ? (
+              <>
+                <div className="inbox-side-head">
+                  <span className="info-card-title">Caso vinculado</span>
+                  <StatusBadge status={caso.status} />
+                </div>
+                <dl className="kv">
+                  <dt>Atendimento</dt>
+                  <dd className="mono">{caso.id}</dd>
+                  <dt>Aparelho</dt>
+                  <dd>
+                    {caso.marca} {caso.modelo}
+                  </dd>
+                  <dt>IMEI</dt>
+                  <dd className="mono">{maskImei(caso.imei)}</dd>
+                  <dt>Cidade/UF</dt>
+                  <dd>
+                    {caso.cidade}/{caso.estado}
+                  </dd>
+                  <dt>Área</dt>
+                  <dd>
+                    <span className="chip">{caso.area}</span>
+                  </dd>
+                  <dt>Defeito</dt>
+                  <dd>{caso.defeito}</dd>
+                </dl>
+                <Link to={`/casos/${caso.id}`} className="btn btn-ghost full">
+                  Abrir caso completo
+                </Link>
+              </>
+            ) : (
+              <p className="muted small">Nenhum caso vinculado a esta conversa.</p>
+            )
+          ) : (
+            <ClientPanel client={client} onSend={() => sendForm(conversa.id)} />
+          )}
         </aside>
       )}
     </div>
+  );
+}
+
+function FormStatusBadge({ status }: { status: FormStatus }) {
+  const meta = FORM_STATUS_META[status];
+  return (
+    <span
+      className="badge"
+      style={{
+        color: meta.color,
+        background: `color-mix(in srgb, ${meta.color} 14%, transparent)`,
+        borderColor: `color-mix(in srgb, ${meta.color} 32%, transparent)`,
+      }}
+    >
+      <span className="badge-dot" style={{ background: meta.color }} />
+      {meta.label}
+    </span>
+  );
+}
+
+// Painel "Detalhes do cliente" — mostra os dados do formulário que o cliente
+// preencheu, ou as ações de envio quando ainda não preenchido.
+function ClientPanel({
+  client,
+  onSend,
+}: {
+  client: Client | undefined;
+  onSend: () => void;
+}) {
+  const status: FormStatus = client?.formStatus ?? "nao_enviado";
+  const form = client?.form;
+
+  return (
+    <>
+      <div className="inbox-side-head">
+        <span className="info-card-title">Detalhes do cliente</span>
+        <FormStatusBadge status={status} />
+      </div>
+
+      {status === "preenchido" && form ? (
+        <>
+          <dl className="kv">
+            <dt>Nome</dt>
+            <dd>{form.nomeCompleto}</dd>
+            <dt>CPF</dt>
+            <dd className="mono">{form.cpf || "—"}</dd>
+            <dt>Nascimento</dt>
+            <dd>
+              {form.nascimento ? form.nascimento.split("-").reverse().join("/") : "—"}
+            </dd>
+            <dt>E-mail</dt>
+            <dd>{form.email || "—"}</dd>
+            <dt>WhatsApp</dt>
+            <dd className="mono">{client?.telefone}</dd>
+            <dt>Endereço</dt>
+            <dd>
+              {form.rua}
+              {form.numero ? `, ${form.numero}` : ""}
+              {form.bairro ? ` — ${form.bairro}` : ""}
+              <br />
+              {form.cidade}/{form.estado}
+              {form.cep ? ` · CEP ${form.cep}` : ""}
+            </dd>
+            <dt>Aparelho</dt>
+            <dd>
+              {form.marca} {form.modelo}
+            </dd>
+            <dt>IMEI 1</dt>
+            <dd className="mono">{form.imei1 || "—"}</dd>
+            <dt>IMEI 2</dt>
+            <dd className="mono">{form.imei2 || "—"}</dd>
+            <dt>SN</dt>
+            <dd className="mono">{form.sn || "—"}</dd>
+            <dt>Nota fiscal</dt>
+            <dd className="mono">{form.notaFiscal || "—"}</dd>
+          </dl>
+          {client?.preenchidoAt && (
+            <p className="muted small">
+              Preenchido em {formatDateTime(client.preenchidoAt)}
+            </p>
+          )}
+        </>
+      ) : status === "enviado" ? (
+        <>
+          <p className="muted small">
+            Formulário enviado
+            {client?.enviadoAt ? ` em ${formatDateTime(client.enviadoAt)}` : ""}.
+            Aguardando o cliente preencher.
+          </p>
+          <Link to={`/form/${client?.telefoneKey}`} className="btn btn-ghost full">
+            Abrir formulário (simular cliente)
+          </Link>
+          <button className="btn full" onClick={onSend}>
+            Reenviar formulário
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="muted small">
+            O cadastro ainda não foi enviado para este cliente.
+          </p>
+          <button className="btn btn-primary full" onClick={onSend}>
+            Enviar formulário
+          </button>
+        </>
+      )}
+    </>
   );
 }
