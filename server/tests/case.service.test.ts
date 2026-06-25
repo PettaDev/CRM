@@ -1,41 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { CaseService } from "../src/services/case.service";
-import type { CaseRepository } from "../src/repositories/case.repository";
-import type { CaseStatus, ServiceCase, StatusEvent } from "../src/domain/types";
-import { NotFoundError } from "../src/domain/errors";
-
-// Repositório FALSO (in-memory). Como o serviço depende da abstração
-// CaseRepository (DIP), conseguimos testar a regra de negócio sem banco.
-class FakeCaseRepository implements CaseRepository {
-  private store = new Map<string, ServiceCase>();
-  private seq = 0;
-
-  findAll(): ServiceCase[] {
-    return [...this.store.values()];
-  }
-  findById(id: string): ServiceCase | null {
-    return this.store.get(id) ?? null;
-  }
-  insert(c: ServiceCase): void {
-    this.store.set(c.id, c);
-  }
-  appendStatus(
-    id: string,
-    status: CaseStatus,
-    updatedAt: string,
-    event: StatusEvent
-  ): void {
-    const c = this.store.get(id);
-    if (!c) return;
-    c.status = status;
-    c.updatedAt = updatedAt;
-    c.historico.push(event);
-  }
-  nextId(): string {
-    this.seq += 1;
-    return `CC-TEST-${String(this.seq).padStart(4, "0")}`;
-  }
-}
+import { ConflictError, NotFoundError } from "../src/domain/errors";
+import { FakeCaseRepository, FakeShipmentRepository } from "./fakes";
 
 const baseInput = {
   cliente: "Ana Lima",
@@ -51,39 +17,70 @@ const baseInput = {
 };
 
 describe("CaseService", () => {
-  let repo: FakeCaseRepository;
+  let caseRepo: FakeCaseRepository;
+  let shipRepo: FakeShipmentRepository;
   let service: CaseService;
 
   beforeEach(() => {
-    repo = new FakeCaseRepository();
-    service = new CaseService(repo);
+    caseRepo = new FakeCaseRepository();
+    shipRepo = new FakeShipmentRepository();
+    service = new CaseService(caseRepo, shipRepo);
   });
 
-  it("cria um caso já com status 'novo' e o primeiro evento de histórico", () => {
-    const caso = service.create(baseInput);
-    expect(caso.status).toBe("novo");
-    expect(caso.historico).toHaveLength(1);
-    expect(caso.historico[0]).toMatchObject({ status: "novo", by: "Beatriz Nunes" });
-    expect(service.list()).toHaveLength(1);
+  it("cria caso com status 'novo' e defaults", () => {
+    const c = service.create(baseInput);
+    expect(c.status).toBe("novo");
+    expect(c.foraGarantia).toBe(false);
+    expect(c.aparelhoLiga).toBe(true);
+    expect(c.validadoEm).toBeNull();
+    expect(c.historico).toHaveLength(1);
   });
 
-  it("lança NotFoundError ao buscar um caso inexistente", () => {
+  it("FSM: permite novo → validado e grava validadoEm (gate)", () => {
+    const c = service.create(baseInput);
+    const v = service.changeStatus(c.id, { status: "validado", by: "Bia" });
+    expect(v.status).toBe("validado");
+    expect(v.validadoEm).not.toBeNull();
+  });
+
+  it("FSM: bloqueia transição inválida (novo → em_reparo)", () => {
+    const c = service.create(baseInput);
+    expect(() =>
+      service.changeStatus(c.id, { status: "em_reparo", by: "Bia" })
+    ).toThrow(ConflictError);
+  });
+
+  it("garantia: foraGarantia é DERIVADO das causas", () => {
+    const c = service.create(baseInput);
+    const g = service.updateGarantia(c.id, {
+      queda: true,
+      agua: false,
+      aberto: false,
+      aparelhoLiga: false,
+    });
+    expect(g.foraGarantia).toBe(true);
+    expect(g.aparelhoLiga).toBe(false);
+  });
+
+  it("remessa: adiciona shipment (rastreio) ao caso", () => {
+    const c = service.create(baseInput);
+    const r = service.addShipment(c.id, {
+      direcao: "ida",
+      codigoRastreio: "BR123456789",
+      transportadora: "Correios",
+    });
+    expect(r.shipments).toHaveLength(1);
+    expect(r.shipments[0].codigoRastreio).toBe("BR123456789");
+  });
+
+  it("busca por IMEI (fallback de identificação)", () => {
+    const c = service.create(baseInput);
+    const found = service.findByImei("356938035643809");
+    expect(found).toHaveLength(1);
+    expect(found[0].id).toBe(c.id);
+  });
+
+  it("getById inexistente lança NotFoundError", () => {
     expect(() => service.getById("CC-9999")).toThrow(NotFoundError);
-  });
-
-  it("muda o status e registra um novo evento no histórico", () => {
-    const caso = service.create(baseInput);
-    const atualizado = service.changeStatus(caso.id, {
-      status: "em_reparo",
-      by: "Rafael Lima",
-      note: "Troca de display",
-    });
-    expect(atualizado.status).toBe("em_reparo");
-    expect(atualizado.historico).toHaveLength(2);
-    expect(atualizado.historico.at(-1)).toMatchObject({
-      status: "em_reparo",
-      by: "Rafael Lima",
-      note: "Troca de display",
-    });
   });
 });

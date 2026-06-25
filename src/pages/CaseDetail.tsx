@@ -5,22 +5,32 @@ import StatusBadge from "../components/StatusBadge";
 import { IconPhone, IconPin } from "../components/icons";
 import {
   STATUS_META,
-  STATUS_ORDER,
   formatDateTime,
   maskImei,
+  statusOptions,
   templateFinalizacao,
   templateInicio,
 } from "../lib/meta";
-import type { CaseStatus } from "../types";
+import type { CaseStatus, ShipmentDirection } from "../types";
 
 export default function CaseDetail() {
   const { id } = useParams();
-  const { cases, updateCaseStatus } = useCrm();
+  const { cases, updateCaseStatus, updateGarantia, addShipment } = useCrm();
   const caso = cases.find((c) => c.id === id);
 
-  const [novoStatus, setNovoStatus] = useState<CaseStatus>("novo");
+  const [novoStatus, setNovoStatus] = useState<CaseStatus>(() => caso?.status ?? "novo");
   const [nota, setNota] = useState("");
   const [revealImei, setRevealImei] = useState(false);
+
+  // Triagem de garantia (estado local do formulário).
+  const [queda, setQueda] = useState(() => caso?.garantiaQueda ?? false);
+  const [agua, setAgua] = useState(() => caso?.garantiaAgua ?? false);
+  const [aberto, setAberto] = useState(() => caso?.garantiaAberto ?? false);
+  const [liga, setLiga] = useState(() => caso?.aparelhoLiga ?? true);
+
+  // Registro de remessa.
+  const [shipDir, setShipDir] = useState<ShipmentDirection>("ida");
+  const [shipCode, setShipCode] = useState("");
 
   if (!caso) {
     return (
@@ -34,11 +44,27 @@ export default function CaseDetail() {
     );
   }
 
+  const shipments = caso.shipments ?? [];
+
   function aplicarStatus() {
     if (!caso) return;
     if (novoStatus === caso.status && !nota.trim()) return;
     updateCaseStatus(caso.id, novoStatus, caso.responsavel, nota.trim() || undefined);
     setNota("");
+  }
+
+  function salvarGarantia() {
+    if (!caso) return;
+    updateGarantia(caso.id, { queda, agua, aberto, aparelhoLiga: liga });
+  }
+
+  function registrarEnvio() {
+    if (!caso) return;
+    addShipment(caso.id, {
+      direcao: shipDir,
+      codigoRastreio: shipCode.trim() || undefined,
+    });
+    setShipCode("");
   }
 
   return (
@@ -93,7 +119,11 @@ export default function CaseDetail() {
 
             <InfoCard title="Responsável">
               <strong>{caso.responsavel}</strong>
-              <span className="muted">Atualizado {formatDateTime(caso.updatedAt)}</span>
+              <span className="muted">
+                {caso.validadoEm
+                  ? `Validado em ${formatDateTime(caso.validadoEm)}`
+                  : "Aguardando validação"}
+              </span>
             </InfoCard>
           </div>
 
@@ -107,6 +137,7 @@ export default function CaseDetail() {
           <section className="card">
             <div className="card-head">
               <h2>Atualizar status</h2>
+              <span className="muted small">transições válidas (FSM)</span>
             </div>
             <div className="status-update">
               <select
@@ -114,7 +145,7 @@ export default function CaseDetail() {
                 value={novoStatus}
                 onChange={(e) => setNovoStatus(e.target.value as CaseStatus)}
               >
-                {STATUS_ORDER.map((s) => (
+                {statusOptions(caso.status).map((s) => (
                   <option key={s} value={s}>
                     {STATUS_META[s].label}
                   </option>
@@ -130,6 +161,86 @@ export default function CaseDetail() {
                 Aplicar
               </button>
             </div>
+          </section>
+
+          <section className="card">
+            <div className="card-head">
+              <h2>Triagem de garantia</h2>
+              {caso.foraGarantia && (
+                <span
+                  className="badge"
+                  style={{
+                    color: "#db2777",
+                    background: "color-mix(in srgb, #db2777 14%, transparent)",
+                    borderColor: "color-mix(in srgb, #db2777 32%, transparent)",
+                  }}
+                >
+                  Fora de garantia
+                </span>
+              )}
+            </div>
+            <div className="checklist">
+              <label>
+                <input type="checkbox" checked={queda} onChange={(e) => setQueda(e.target.checked)} />
+                Sofreu queda
+              </label>
+              <label>
+                <input type="checkbox" checked={agua} onChange={(e) => setAgua(e.target.checked)} />
+                Entrou água
+              </label>
+              <label>
+                <input type="checkbox" checked={aberto} onChange={(e) => setAberto(e.target.checked)} />
+                Previamente aberto em outra assistência
+              </label>
+              <label>
+                <input type="checkbox" checked={liga} onChange={(e) => setLiga(e.target.checked)} />
+                O aparelho liga
+              </label>
+            </div>
+            <button className="btn btn-primary" onClick={salvarGarantia}>
+              Salvar triagem
+            </button>
+          </section>
+
+          <section className="card">
+            <div className="card-head">
+              <h2>Logística (Correios)</h2>
+            </div>
+            {shipments.length === 0 ? (
+              <p className="muted small">Nenhuma remessa registrada.</p>
+            ) : (
+              <ul className="ship-list">
+                {shipments.map((s) => (
+                  <li key={s.id}>
+                    <span className="chip">{s.direcao === "ida" ? "Ida" : "Volta"}</span>
+                    <span className="mono">{s.codigoRastreio ?? "sem rastreio"}</span>
+                    <span className="muted small">{s.transportadora}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="status-update">
+              <select
+                className="input"
+                value={shipDir}
+                onChange={(e) => setShipDir(e.target.value as ShipmentDirection)}
+              >
+                <option value="ida">Ida (cliente → unidade)</option>
+                <option value="volta">Volta (unidade → cliente)</option>
+              </select>
+              <input
+                className="input"
+                placeholder="Código de rastreio (opcional)"
+                value={shipCode}
+                onChange={(e) => setShipCode(e.target.value)}
+              />
+              <button className="btn" onClick={registrarEnvio}>
+                Registrar envio
+              </button>
+            </div>
+            <p className="muted small">
+              Sem o código, o pacote é identificado pelo IMEI ({maskImei(caso.imei)}) vinculado ao número.
+            </p>
           </section>
 
           <section className="card">

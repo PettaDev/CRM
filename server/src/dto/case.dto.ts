@@ -11,10 +11,16 @@ export const deviceBrandSchema = z.enum([
 export const areaSchema = z.enum(["Carlcare", "TFAE", "Comercial", "HQ"]);
 export const caseStatusSchema = z.enum([
   "novo",
+  "validado",
+  "aguardando_envio",
+  "em_transito",
+  "recebido",
   "triagem",
-  "aguardando_peca",
+  "fora_garantia",
   "em_reparo",
+  "aguardando_peca",
   "pronto",
+  "enviado_retorno",
   "finalizado",
   "cancelado",
 ]);

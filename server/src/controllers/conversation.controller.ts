@@ -9,18 +9,24 @@ export class ConversationController {
   };
 
   getById = (req: Request, res: Response): void => {
-    res.json(this.service.getById((req.params.id as string)));
+    res.json(this.service.getById(req.params.id as string));
   };
 
   addMessage = (req: Request, res: Response): void => {
-    res.status(201).json(this.service.addMessage((req.params.id as string), req.body));
+    res.status(201).json(this.service.addMessage(req.params.id as string, req.body));
   };
 
   markRead = (req: Request, res: Response): void => {
-    res.json(this.service.markRead((req.params.id as string)));
+    res.json(this.service.markRead(req.params.id as string));
   };
 
   sendForm = (req: Request, res: Response): void => {
-    res.status(201).json(this.service.sendForm((req.params.id as string)));
+    res.status(201).json(this.service.sendForm(req.params.id as string));
+  };
+
+  sendTemplate = (req: Request, res: Response): void => {
+    res
+      .status(201)
+      .json(this.service.sendTemplate(req.params.id as string, req.body.templateId));
   };
 }

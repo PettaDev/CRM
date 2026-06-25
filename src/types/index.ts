@@ -3,15 +3,32 @@
 // Tipos compartilhados por toda a aplicação.
 // ───────────────────────────────────────────────────────────────────────────
 
-// Status do caso/atendimento — espelha o ciclo de vida de um reparo.
+// Status do caso/atendimento — ciclo de vida no modelo "mail-in" (envio).
 export type CaseStatus =
   | "novo"
+  | "validado"
+  | "aguardando_envio"
+  | "em_transito"
+  | "recebido"
   | "triagem"
-  | "aguardando_peca"
+  | "fora_garantia"
   | "em_reparo"
+  | "aguardando_peca"
   | "pronto"
+  | "enviado_retorno"
   | "finalizado"
   | "cancelado";
+
+// Remessa (Correios) — perna de ida/volta vinculada ao caso.
+export type ShipmentDirection = "ida" | "volta";
+export interface Shipment {
+  id: number;
+  direcao: ShipmentDirection;
+  codigoRastreio: string | null;
+  enviadoEm: string | null;
+  transportadora: string;
+  criadoEm: string;
+}
 
 // Áreas/filas internas que acompanham o caso.
 export type Area = "Carlcare" | "TFAE" | "Comercial" | "HQ";
@@ -42,6 +59,14 @@ export interface ServiceCase {
   area: Area;
   responsavel: string;
   canal: "WhatsApp";
+  // Campos do fluxo mail-in (opcionais: o mock não os preenche, o backend sim).
+  garantiaQueda?: boolean;
+  garantiaAgua?: boolean;
+  garantiaAberto?: boolean;
+  foraGarantia?: boolean; // derivado das causas acima
+  aparelhoLiga?: boolean;
+  validadoEm?: string | null; // gate de validação
+  shipments?: Shipment[];
   createdAt: string; // ISO
   updatedAt: string; // ISO
   historico: StatusEvent[];

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
 import StatusBadge from "../components/StatusBadge";
@@ -14,14 +14,23 @@ import {
   formatTime,
 } from "../lib/meta";
 import type { Client, FormStatus } from "../types";
+import { crmApi } from "../api/crm.api";
+import type { TemplateSummary } from "../api/crm.api";
 
 export default function Inbox() {
-  const { conversations, cases, clients, sendMessage, markRead, sendForm } = useCrm();
+  const { conversations, cases, clients, sendMessage, markRead, sendForm, sendTemplate } =
+    useCrm();
   const [selectedId, setSelectedId] = useState<string>(
     conversations[0] ? conversations[0].id : ""
   );
   const [draft, setDraft] = useState("");
   const [sideTab, setSideTab] = useState<"caso" | "cliente">("caso");
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
+
+  // Carrega os modelos de mensagem do backend (cai vazio se a API estiver fora).
+  useEffect(() => {
+    crmApi.listTemplates().then(setTemplates).catch(() => setTemplates([]));
+  }, []);
 
   const ordered = useMemo(
     () => [...conversations].sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
@@ -128,6 +137,26 @@ export default function Inbox() {
                     Enviar finalização
                   </button>
                 </>
+              )}
+              {templates.length > 0 && (
+                <select
+                  className="input template-select"
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) sendTemplate(conversa.id, e.target.value);
+                  }}
+                >
+                  <option value="">Inserir modelo…</option>
+                  {templates.map((t) => {
+                    const bloqueado = t.requiresValidated && !caso?.validadoEm;
+                    return (
+                      <option key={t.id} value={t.id} disabled={bloqueado}>
+                        {t.nome}
+                        {bloqueado ? " (requer validação)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
               )}
             </div>
             <form
