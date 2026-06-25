@@ -19,8 +19,15 @@ interface NavItem {
 }
 
 export default function Layout() {
-  const { conversations } = useCrm();
+  const { conversations, apiStatus } = useCrm();
   const unread = conversations.reduce((n, c) => n + (c.unread > 0 ? 1 : 0), 0);
+
+  const apiLabel =
+    apiStatus === "online"
+      ? "API conectada"
+      : apiStatus === "offline"
+        ? "API offline (mock)"
+        : "Conectando…";
 
   const items: NavItem[] = [
     { to: "/", label: "Visão geral", icon: <IconDashboard /> },
@@ -72,6 +79,10 @@ export default function Layout() {
             />
           </div>
           <div className="topbar-actions">
+            <span className={"api-status " + apiStatus} title={apiLabel}>
+              <span className="api-dot" />
+              {apiLabel}
+            </span>
             <button className="icon-btn" aria-label="Notificações">
               <IconBell />
               {unread > 0 && <span className="icon-btn-dot" />}

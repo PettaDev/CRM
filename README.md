@@ -1,73 +1,87 @@
 # Carlcare CRM
 
-Protótipo de **CRM de atendimento e assistência técnica** inspirado na
-[Carlcare Brasil](https://www.carlcare.com/br/), com os fluxos de um CRM de
-WhatsApp no estilo do template open-source
-[wacrm](https://github.com/ArnasDon/wacrm).
+CRM **full-stack** de atendimento e assistência técnica, inspirado na
+[Carlcare Brasil](https://www.carlcare.com/br/) e nos fluxos do template
+open-source [wacrm](https://github.com/ArnasDon/wacrm).
 
-> ⚠️ **Protótipo navegável com dados fictícios.** Não há integração real com
-> WhatsApp/Supabase ainda — o objetivo é validar a experiência, a identidade
-> visual e os fluxos antes de um piloto controlado.
+O projeto é estruturado para **estudar conceitos de Software Engineering** —
+ver [`ARCHITECTURE.md`](ARCHITECTURE.md) para o mapa de conceitos (camadas,
+SOLID, repository, DTO, DI, testes, modelagem de dados, etc.).
 
-## O que tem aqui
+```
+CRM/
+├── src/            Frontend  — React 19 + Vite + TypeScript
+├── server/         Backend   — Express + TypeScript (arquitetura em camadas)
+│   └── src/db/     Banco     — SQLite (schema, migração, seed)
+└── ARCHITECTURE.md Conceitos de SE aplicados
+```
 
-- **Visão geral (dashboard)** — indicadores por área (Carlcare, TFAE, Comercial,
-  HQ) e por status do caso.
-- **Caixa de entrada compartilhada** — conversas de WhatsApp (mock), com o caso
-  vinculado lado a lado e atalhos de automação.
-- **Casos** — tabela e kanban, filtros por status/área/busca e criação de novos
-  atendimentos com os campos: cliente, telefone, marca, modelo, **IMEI**,
-  cidade, **UF**, defeito, área e responsável.
-- **Caso (detalhe)** — dados do cliente/aparelho, troca de status com linha do
-  tempo e prévia das mensagens automáticas.
-- **Automações** — regras de disparo, prévia dos templates de WhatsApp e o
-  fluxo de piloto recomendado.
+## Funcionalidades
 
-## Stack
+- **Dashboard** com indicadores por área (Carlcare/TFAE/Comercial/HQ) e por status.
+- **Caixa de entrada** compartilhada (WhatsApp) com o caso vinculado.
+- **Casos** em tabela e kanban; campos modelo, **IMEI**, cidade, UF, defeito, status.
+- **Cadastro do cliente**: formulário enviado por WhatsApp, **associado pelo número**,
+  com IMEI 1, IMEI 2 e SN (instrução `*#06#`) + consentimento LGPD.
+- **API REST** + **banco** persistindo tudo; o frontend hidrata da API com
+  fallback para mock (offline-first).
 
-- React 19 + TypeScript
-- Vite
-- React Router (HashRouter — compatível com hospedagem estática)
-- Sem dependências de UI: design system próprio em CSS (identidade Carlcare)
+## Como rodar (full-stack)
 
-## Como rodar
+Dois terminais. **Backend primeiro:**
+
+```bash
+cd server
+npm install
+npm run db:reset     # cria o schema e popula o banco (migração + seed)
+npm run dev          # API em http://localhost:3001/api
+```
+
+**Frontend:**
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
+npm run dev          # app em http://localhost:5173
 ```
 
-Outros comandos:
+O indicador na barra superior mostra **API conectada** (verde) ou
+**API offline (mock)** se o backend não estiver no ar.
 
-```bash
-npm run build    # type-check + build de produção (saída em dist/)
-npm run preview  # serve o build localmente
-```
+> Só quer ver a UI? Rode apenas o frontend — ele funciona sozinho com dados mock.
 
-## Estrutura
+## Scripts
 
-```
-src/
-  components/   Layout, Logo, StatusBadge, ícones
-  context/      CrmContext — estado vivo (casos, conversas, ações)
-  data/         mock.ts — dados fictícios (casos, conversas, agentes)
-  lib/          meta.ts — status/áreas, formatadores, templates de WhatsApp
-  pages/        Dashboard, Inbox, Cases, CaseDetail, Automations
-  types/        modelos de domínio
-```
+**Frontend** (`/`): `npm run dev` · `npm run build` · `npm run preview`
 
-## Próximos passos (para virar produção)
+**Backend** (`/server`):
+
+| Script             | O que faz                                  |
+|--------------------|--------------------------------------------|
+| `npm run dev`      | Sobe a API com reload (tsx watch)          |
+| `npm run build`    | Type-check + compila para `dist/`          |
+| `npm start`        | Roda o build (`node dist/index.js`)        |
+| `npm run migrate`  | Aplica o schema                            |
+| `npm run seed`     | Popula o banco com dados de exemplo        |
+| `npm run db:reset` | `migrate` + `seed`                         |
+| `npm test`         | Testes unitários (vitest)                  |
+
+## Stack
+
+- **Frontend:** React 19, TypeScript, Vite, React Router (HashRouter); design
+  system próprio em CSS (sem libs de UI).
+- **Backend:** Node, Express 5, TypeScript; validação com zod.
+- **Banco:** SQLite (`better-sqlite3`). DDL PostgreSQL/Supabase em
+  [`server/docs/schema.postgres.sql`](server/docs/schema.postgres.sql).
+
+## Próximos passos (rumo à produção)
 
 1. **WhatsApp Business API** (Meta Cloud API) com número aprovado e templates.
-2. **Supabase** (PostgreSQL + Auth + RLS) substituindo os dados mock.
-3. **Webhooks** de entrada para criar/atualizar casos a partir das mensagens.
-4. **LGPD** — tratamento de dados sensíveis (IMEI, telefone, CPF), consentimento
-   e controle de acesso por perfil/área.
-5. **Validação** com Carlcare, TFAE, Comercial e HQ em um piloto de 20–50
-   atendimentos reais.
+2. Trocar o SQLite por **PostgreSQL/Supabase** (basta um novo repositório — DIP).
+3. **Autenticação/Autorização** por perfil e área.
+4. **LGPD** — tratamento de dados sensíveis (IMEI, CPF, telefone) e consentimento.
+5. Validação em piloto (20–50 atendimentos) com Carlcare, TFAE, Comercial e HQ.
 
-## Deploy (GitHub Pages)
+## Deploy (GitHub Pages — só frontend)
 
-O `vite.config.ts` usa `base: "/CRM/"` no build de produção (compatível com
-`https://<usuário>.github.io/CRM/`). O roteamento é por hash, então não exige
-configuração de servidor.
+O `vite.config.ts` usa `base: "/CRM/"` no build de produção e roteamento por hash.
+O backend exige um host com Node + banco (não roda no Pages).

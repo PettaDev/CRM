@@ -1,0 +1,12 @@
+node_modules
+dist
+*.log
+
+# Banco de dados local (gerado por migrate/seed)
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Variáveis de ambiente
+.env
