@@ -1154,6 +1154,34 @@ textarea.input {
   padding: 80px 20px;
 }
 
+/* ── Indicador de status da API (topbar) ──────────────────────────────────── */
+
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  white-space: nowrap;
+}
+.api-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.api-status.online .api-dot {
+  background: var(--green);
+}
+.api-status.offline .api-dot {
+  background: var(--red);
+}
+
 /* ── Abas do painel lateral (inbox) ───────────────────────────────────────── */
 
 .side-seg {
