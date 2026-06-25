@@ -4,9 +4,13 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --brand: #0d6efd;
-  --brand-dark: #0a58ca;
-  --brand-light: #e7f1ff;
+  /* Identidade Carlcare Service — azul do "c" e verde do sorriso. */
+  --brand: #0079c1;
+  --brand-dark: #005e97;
+  --brand-light: #e6f2fb;
+
+  --brand-green: #3ab54a;
+  --brand-green-dark: #2e9a3e;
 
   --bg: #f4f6fb;
   --surface: #ffffff;
@@ -304,18 +308,32 @@ a {
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
 .logo-mark {
   display: block;
+  flex-shrink: 0;
+}
+.logo-divider {
+  width: 1px;
+  height: 26px;
+  background: var(--border-strong);
 }
 .logo-text {
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: -0.02em;
-  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.04;
 }
-.logo-text-accent {
+.logo-text strong {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--brand);
+}
+.logo-text-sub {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--brand);
 }
 
@@ -365,7 +383,7 @@ a {
   color: var(--brand-dark);
 }
 .btn-ghost:hover {
-  background: #d8e8ff;
+  background: #d4e8f7;
 }
 .btn.full {
   width: 100%;
@@ -886,7 +904,7 @@ textarea.input {
 }
 .wa-bubble {
   background: var(--brand-light);
-  border: 1px solid #d3e4ff;
+  border: 1px solid #cfe5f6;
   border-radius: 4px 12px 12px 12px;
   padding: 10px 13px;
   font-size: 13px;
@@ -1238,7 +1256,7 @@ textarea.input {
 }
 .callout {
   background: var(--brand-light);
-  border: 1px solid #d3e4ff;
+  border: 1px solid #cfe5f6;
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   font-size: 13px;
@@ -1251,7 +1269,7 @@ textarea.input {
 .callout code {
   font-family: var(--mono);
   background: #fff;
-  border: 1px solid #cfe0ff;
+  border: 1px solid #c4e0f4;
   border-radius: 4px;
   padding: 1px 7px;
   font-weight: 700;

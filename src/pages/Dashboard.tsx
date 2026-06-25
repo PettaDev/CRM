@@ -59,7 +59,7 @@ export default function Dashboard() {
       </div>
 
       <div className="kpi-grid">
-        <KpiCard label="Casos abertos" value={stats.abertos} accent="#0d6efd" hint="Em andamento" />
+        <KpiCard label="Casos abertos" value={stats.abertos} accent="#0079c1" hint="Em andamento" />
         <KpiCard label="Aguardando peça" value={stats.aguardando} accent="#f59e0b" hint="Bloqueados por estoque" />
         <KpiCard label="Prontos p/ retirada" value={stats.prontos} accent="#0ea5a4" hint="Avisar o cliente" />
         <KpiCard label="Finalizados" value={stats.finalizados} accent="#16a34a" hint="Concluídos" />
