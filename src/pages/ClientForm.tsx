@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
 import Logo from "../components/Logo";
@@ -25,9 +25,49 @@ const EMPTY: ClientFormData = {
   consentimentoLgpd: false,
 };
 
+const onlyDigits = (s: string): string => s.replace(/\D/g, "");
+
+function formatCpf(s: string): string {
+  const d = onlyDigits(s).slice(0, 11);
+  return d
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function formatCep(s: string): string {
+  const d = onlyDigits(s).slice(0, 8);
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+}
+
+type Errors = Partial<Record<keyof ClientFormData, string>>;
+
+// Todos os campos são obrigatórios (exceto IMEI 2 — 2º SIM). CPF = 11 dígitos,
+// e-mail precisa do @, CEP = 8 dígitos.
+function validate(form: ClientFormData): Errors {
+  const e: Errors = {};
+  if (!form.nomeCompleto.trim()) e.nomeCompleto = "Obrigatório.";
+  if (onlyDigits(form.cpf).length !== 11) e.cpf = "O CPF deve ter 11 dígitos.";
+  if (!form.nascimento) e.nascimento = "Obrigatório.";
+  if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "E-mail inválido (precisa do @).";
+  if (onlyDigits(form.cep).length !== 8) e.cep = "O CEP deve ter 8 dígitos.";
+  if (!form.rua.trim()) e.rua = "Obrigatório.";
+  if (!form.numero.trim()) e.numero = "Obrigatório.";
+  if (!form.bairro.trim()) e.bairro = "Obrigatório.";
+  if (!form.cidade.trim()) e.cidade = "Obrigatório.";
+  if (form.estado.trim().length !== 2) e.estado = "Informe a UF.";
+  if (!form.modelo.trim()) e.modelo = "Obrigatório.";
+  if (!form.imei1.trim()) e.imei1 = "Obrigatório.";
+  if (!form.sn.trim()) e.sn = "Obrigatório.";
+  if (!form.notaFiscal.trim()) e.notaFiscal = "Obrigatório.";
+  if (!form.consentimentoLgpd) e.consentimentoLgpd = "É necessário aceitar.";
+  return e;
+}
+
+type CepStatus = "idle" | "loading" | "ok" | "error";
+
 // Página pública que o cliente abre pelo link recebido no WhatsApp.
-// O telefone vem da plataforma (token = telefoneKey) e fica travado — a
-// associação não depende do que o cliente digita.
+// O telefone vem da plataforma (token = telefoneKey) e fica travado.
 export default function ClientForm() {
   const { token } = useParams();
   const { clients, cases, submitForm } = useCrm();
@@ -35,12 +75,57 @@ export default function ClientForm() {
   // Caso vinculado pelo telefone — define o default da instrução de IMEI/SN.
   const casoVinc = cases.find((c) => phoneKey(c.telefone) === token);
   const defeitoNaoLiga = /n[ãa]o\s+liga/i.test(casoVinc?.defeito ?? "");
+
   const [form, setForm] = useState<ClientFormData>(client?.form ?? EMPTY);
   const [aparelhoLiga, setAparelhoLiga] = useState(() => !defeitoNaoLiga);
+  const [submitted, setSubmitted] = useState(false);
+  const [cepStatus, setCepStatus] = useState<CepStatus>("idle");
   const [sent, setSent] = useState(false);
 
   const set = <K extends keyof ClientFormData>(key: K, value: ClientFormData[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  // Busca o endereço no ViaCEP quando o CEP tem 8 dígitos (autopreenchimento).
+  useEffect(() => {
+    const cep = onlyDigits(form.cep);
+    if (cep.length !== 8) {
+      setCepStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setCepStatus("loading");
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      .then((r) => r.json())
+      .then(
+        (data: {
+          erro?: boolean;
+          logradouro?: string;
+          bairro?: string;
+          localidade?: string;
+          uf?: string;
+        }) => {
+          if (cancelled) return;
+          if (data.erro) {
+            setCepStatus("error");
+            return;
+          }
+          setForm((f) => ({
+            ...f,
+            rua: data.logradouro || f.rua,
+            bairro: data.bairro || f.bairro,
+            cidade: data.localidade || f.cidade,
+            estado: data.uf || f.estado,
+          }));
+          setCepStatus("ok");
+        }
+      )
+      .catch(() => {
+        if (!cancelled) setCepStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.cep]);
 
   if (!token || !client) {
     return (
@@ -73,26 +158,37 @@ export default function ClientForm() {
     );
   }
 
-  const canSave =
-    form.nomeCompleto.trim() && form.imei1.trim() && form.consentimentoLgpd;
+  const errors = validate(form);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSave || !token) return;
+    if (Object.keys(errors).length > 0) {
+      setSubmitted(true);
+      return;
+    }
+    if (!token) return;
     submitForm(token, form);
     setSent(true);
   }
 
+  // Helpers de exibição de erro.
+  const err = (k: keyof ClientFormData) => (submitted ? errors[k] : undefined);
+  const cls = (k: keyof ClientFormData, locked = false) =>
+    "input" + (err(k) ? " invalid" : "") + (locked ? " locked" : "");
+  // Campos preenchidos pelo ViaCEP ficam travados (cliente só põe o número).
+  const cepLocked = (k: keyof ClientFormData) =>
+    cepStatus === "ok" && !!String(form[k]);
+
   return (
     <div className="form-page">
-      <form className="form-page-card" onSubmit={handleSubmit}>
+      <form className="form-page-card" onSubmit={handleSubmit} noValidate>
         <div className="form-page-head">
           <Logo />
           <span className="chip">Cadastro de atendimento</span>
         </div>
         <p className="muted">
           Preencha seus dados para agilizar o atendimento — leva 2 minutos. 🔒 Seus
-          dados são tratados conforme a LGPD.
+          dados são tratados conforme a LGPD. Todos os campos são obrigatórios.
         </p>
 
         <label className="field">
@@ -105,92 +201,114 @@ export default function ClientForm() {
           <label className="field span-2">
             <span>Nome completo *</span>
             <input
-              className="input"
+              className={cls("nomeCompleto")}
               value={form.nomeCompleto}
               onChange={(e) => set("nomeCompleto", e.target.value)}
             />
+            {err("nomeCompleto") && <span className="field-error">{err("nomeCompleto")}</span>}
           </label>
           <label className="field">
-            <span>CPF</span>
+            <span>CPF *</span>
             <input
-              className="input"
+              className={cls("cpf")}
               value={form.cpf}
-              onChange={(e) => set("cpf", e.target.value)}
+              inputMode="numeric"
+              onChange={(e) => set("cpf", formatCpf(e.target.value))}
               placeholder="000.000.000-00"
             />
+            {err("cpf") && <span className="field-error">{err("cpf")}</span>}
           </label>
           <label className="field">
-            <span>Data de nascimento</span>
+            <span>Data de nascimento *</span>
             <input
-              className="input"
+              className={cls("nascimento")}
               type="date"
               value={form.nascimento}
               onChange={(e) => set("nascimento", e.target.value)}
             />
+            {err("nascimento") && <span className="field-error">{err("nascimento")}</span>}
           </label>
           <label className="field span-2">
-            <span>E-mail</span>
+            <span>E-mail *</span>
             <input
-              className="input"
+              className={cls("email")}
               type="email"
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
+              placeholder="voce@email.com"
             />
+            {err("email") && <span className="field-error">{err("email")}</span>}
           </label>
         </div>
 
         <h2 className="form-section-title">Endereço</h2>
         <div className="form-grid bare">
           <label className="field">
-            <span>CEP</span>
+            <span>CEP *</span>
             <input
-              className="input"
+              className={cls("cep")}
               value={form.cep}
-              onChange={(e) => set("cep", e.target.value)}
+              inputMode="numeric"
+              onChange={(e) => set("cep", formatCep(e.target.value))}
               placeholder="00000-000"
             />
+            {cepStatus === "loading" && <span className="field-hint">Buscando endereço…</span>}
+            {cepStatus === "error" && <span className="field-error">CEP não encontrado.</span>}
+            {cepStatus === "ok" && <span className="field-ok">Endereço preenchido ✓</span>}
+            {err("cep") && cepStatus !== "error" && (
+              <span className="field-error">{err("cep")}</span>
+            )}
           </label>
           <label className="field">
-            <span>Número</span>
+            <span>Número *</span>
             <input
-              className="input"
+              className={cls("numero")}
               value={form.numero}
               onChange={(e) => set("numero", e.target.value)}
             />
+            {err("numero") && <span className="field-error">{err("numero")}</span>}
           </label>
           <label className="field span-2">
-            <span>Rua</span>
+            <span>Rua *</span>
             <input
-              className="input"
+              className={cls("rua", cepLocked("rua"))}
               value={form.rua}
+              readOnly={cepLocked("rua")}
               onChange={(e) => set("rua", e.target.value)}
             />
+            {err("rua") && <span className="field-error">{err("rua")}</span>}
           </label>
           <label className="field">
-            <span>Bairro</span>
+            <span>Bairro *</span>
             <input
-              className="input"
+              className={cls("bairro", cepLocked("bairro"))}
               value={form.bairro}
+              readOnly={cepLocked("bairro")}
               onChange={(e) => set("bairro", e.target.value)}
             />
+            {err("bairro") && <span className="field-error">{err("bairro")}</span>}
           </label>
           <label className="field">
-            <span>Cidade</span>
+            <span>Cidade *</span>
             <input
-              className="input"
+              className={cls("cidade", cepLocked("cidade"))}
               value={form.cidade}
+              readOnly={cepLocked("cidade")}
               onChange={(e) => set("cidade", e.target.value)}
             />
+            {err("cidade") && <span className="field-error">{err("cidade")}</span>}
           </label>
           <label className="field">
-            <span>UF</span>
+            <span>UF *</span>
             <input
-              className="input"
+              className={cls("estado", cepLocked("estado"))}
               value={form.estado}
               maxLength={2}
+              readOnly={cepLocked("estado")}
               onChange={(e) => set("estado", e.target.value.toUpperCase())}
               placeholder="SP"
             />
+            {err("estado") && <span className="field-error">{err("estado")}</span>}
           </label>
         </div>
 
@@ -235,9 +353,10 @@ export default function ClientForm() {
             </>
           )}
         </div>
+
         <div className="form-grid bare">
           <label className="field">
-            <span>Marca</span>
+            <span>Marca *</span>
             <select
               className="input"
               value={form.marca}
@@ -251,22 +370,24 @@ export default function ClientForm() {
             </select>
           </label>
           <label className="field">
-            <span>Modelo</span>
+            <span>Modelo *</span>
             <input
-              className="input"
+              className={cls("modelo")}
               value={form.modelo}
               onChange={(e) => set("modelo", e.target.value)}
               placeholder="Ex.: Spark 20 Pro"
             />
+            {err("modelo") && <span className="field-error">{err("modelo")}</span>}
           </label>
           <label className="field">
             <span>IMEI 1 *</span>
             <input
-              className="input"
+              className={cls("imei1")}
               value={form.imei1}
               onChange={(e) => set("imei1", e.target.value)}
               placeholder="15 dígitos"
             />
+            {err("imei1") && <span className="field-error">{err("imei1")}</span>}
           </label>
           <label className="field">
             <span>IMEI 2</span>
@@ -278,24 +399,26 @@ export default function ClientForm() {
             />
           </label>
           <label className="field">
-            <span>Número de série (SN)</span>
+            <span>Número de série (SN) *</span>
             <input
-              className="input"
+              className={cls("sn")}
               value={form.sn}
               onChange={(e) => set("sn", e.target.value)}
             />
+            {err("sn") && <span className="field-error">{err("sn")}</span>}
           </label>
           <label className="field">
-            <span>Nº da nota fiscal</span>
+            <span>Nº da nota fiscal *</span>
             <input
-              className="input"
+              className={cls("notaFiscal")}
               value={form.notaFiscal}
               onChange={(e) => set("notaFiscal", e.target.value)}
             />
+            {err("notaFiscal") && <span className="field-error">{err("notaFiscal")}</span>}
           </label>
         </div>
 
-        <label className="consent">
+        <label className={"consent" + (err("consentimentoLgpd") ? " invalid" : "")}>
           <input
             type="checkbox"
             checked={form.consentimentoLgpd}
@@ -307,7 +430,7 @@ export default function ClientForm() {
           </span>
         </label>
 
-        <button className="btn btn-primary full" type="submit" disabled={!canSave}>
+        <button className="btn btn-primary full" type="submit">
           Enviar cadastro
         </button>
       </form>
