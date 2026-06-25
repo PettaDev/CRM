@@ -1,17 +1,26 @@
 import type { ConversationRepository } from "../repositories/conversation.repository";
 import type { ClientRepository } from "../repositories/client.repository";
+import type { CaseRepository } from "../repositories/case.repository";
+import type { TemplateService } from "./template.service";
 import type { AddMessageDto } from "../dto/message.dto";
-import type { ChatMessage, Client, Conversation } from "../domain/types";
-import { NotFoundError } from "../domain/errors";
+import type {
+  ChatMessage,
+  Client,
+  Conversation,
+  ServiceCase,
+} from "../domain/types";
+import { NotFoundError, ConflictError } from "../domain/errors";
 import { phoneKey } from "../utils/phone";
+import { UNIT_ADDRESS } from "../domain/constants";
 
-// Caso de uso "envio de formulário" cruza dois agregados (conversa + cliente),
-// por isso o serviço coordena os dois repositórios. `frontendBaseUrl` é injetado
-// (não hardcoded) para montar o link do formulário.
+// Serviço da caixa de entrada. Coordena conversa + cliente + caso + templates
+// (caso de uso de mensageria). Dependências injetadas por construtor.
 export class ConversationService {
   constructor(
     private readonly conversations: ConversationRepository,
     private readonly clients: ClientRepository,
+    private readonly cases: CaseRepository,
+    private readonly templates: TemplateService,
     private readonly frontendBaseUrl: string
   ) {}
 
@@ -26,14 +35,8 @@ export class ConversationService {
   }
 
   addMessage(id: string, dto: AddMessageDto): Conversation {
-    this.getById(id); // valida existência
-    const message: ChatMessage = {
-      id: `m-${Date.now()}`,
-      from: dto.from,
-      text: dto.text,
-      at: new Date().toISOString(),
-    };
-    this.conversations.addMessage(id, message);
+    this.getById(id);
+    this.conversations.addMessage(id, this.newMessage(dto.from, dto.text));
     return this.getById(id);
   }
 
@@ -53,15 +56,56 @@ export class ConversationService {
     const text =
       `Olá, ${conv.cliente.split(" ")[0]}! 👋 Aqui é a Carlcare. ` +
       `Para agilizar seu atendimento, preencha seu cadastro: ${link}`;
-    this.conversations.addMessage(id, {
-      id: `m-${Date.now()}`,
-      from: "agente",
-      text,
-      at: now,
-    });
+    this.conversations.addMessage(id, this.newMessage("agente", text));
 
     const client = this.clients.findByKey(key);
     if (!client) throw new NotFoundError("Cliente", key);
     return { conversation: this.getById(id), client };
+  }
+
+  // Envia um template renderizado. Aplica o GATE: templates marcados como
+  // `requiresValidated` exigem o caso validado (ex.: endereço dos Correios).
+  sendTemplate(id: string, templateId: string): Conversation {
+    const conv = this.getById(id);
+    const caso = conv.caseId ? this.cases.findById(conv.caseId) : null;
+    const def = this.templates.get(templateId); // 404 se não existir
+
+    if (def.requiresValidated && !(caso && caso.validadoEm)) {
+      throw new ConflictError(
+        "O caso precisa estar validado antes de enviar esta mensagem (ex.: endereço dos Correios)."
+      );
+    }
+
+    const client = this.clients.findByKey(phoneKey(conv.telefone)) ?? undefined;
+    const text = this.templates.render(templateId, this.buildVars(caso, client));
+    this.conversations.addMessage(id, this.newMessage("agente", text));
+    return this.getById(id);
+  }
+
+  // ── helpers ──
+  private newMessage(from: "cliente" | "agente", text: string): ChatMessage {
+    return { id: `m-${Date.now()}`, from, text, at: new Date().toISOString() };
+  }
+
+  private buildVars(
+    caso: ServiceCase | null,
+    client: Client | undefined
+  ): Record<string, string> {
+    const form = client?.form;
+    const primeiroNome = (caso?.cliente ?? form?.nomeCompleto ?? "cliente").split(" ")[0];
+    return {
+      cliente: primeiroNome,
+      nomeCompleto: form?.nomeCompleto ?? caso?.cliente ?? "",
+      caseId: caso?.id ?? "",
+      marca: caso?.marca ?? form?.marca ?? "",
+      modelo: caso?.modelo ?? form?.modelo ?? "",
+      imei: caso?.imei || form?.imei1 || "",
+      destinatario: UNIT_ADDRESS.destinatario,
+      enderecoUnidade: UNIT_ADDRESS.endereco,
+      complemento: UNIT_ADDRESS.complemento,
+      bairro: UNIT_ADDRESS.bairro,
+      cep: UNIT_ADDRESS.cep,
+      telefoneUnidade: UNIT_ADDRESS.telefone,
+    };
   }
 }

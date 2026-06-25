@@ -19,23 +19,57 @@ interface StatusMeta {
 // Ordem também define o fluxo do kanban / funil.
 export const STATUS_ORDER: CaseStatus[] = [
   "novo",
+  "validado",
+  "aguardando_envio",
+  "em_transito",
+  "recebido",
   "triagem",
-  "aguardando_peca",
+  "fora_garantia",
   "em_reparo",
+  "aguardando_peca",
   "pronto",
+  "enviado_retorno",
   "finalizado",
   "cancelado",
 ];
 
 export const STATUS_META: Record<CaseStatus, StatusMeta> = {
   novo: { label: "Novo", color: "#64748b" },
+  validado: { label: "Validado", color: "#0891b2" },
+  aguardando_envio: { label: "Aguardando envio", color: "#f59e0b" },
+  em_transito: { label: "Em trânsito", color: "#8b5cf6" },
+  recebido: { label: "Recebido", color: "#14b8a6" },
   triagem: { label: "Triagem", color: "#6366f1" },
-  aguardando_peca: { label: "Aguardando peça", color: "#f59e0b" },
+  fora_garantia: { label: "Fora de garantia", color: "#db2777" },
   em_reparo: { label: "Em reparo", color: "#0d6efd" },
-  pronto: { label: "Pronto p/ retirada", color: "#0ea5a4" },
+  aguardando_peca: { label: "Aguardando peça", color: "#d97706" },
+  pronto: { label: "Pronto", color: "#0ea5a4" },
+  enviado_retorno: { label: "Enviado (retorno)", color: "#7c3aed" },
   finalizado: { label: "Finalizado", color: "#16a34a" },
   cancelado: { label: "Cancelado", color: "#dc2626" },
 };
+
+// Máquina de estados (espelha o backend). Usada para guiar o dropdown de status.
+export const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
+  novo: ["validado", "cancelado"],
+  validado: ["aguardando_envio", "triagem", "cancelado"],
+  aguardando_envio: ["em_transito", "cancelado"],
+  em_transito: ["recebido", "cancelado"],
+  recebido: ["triagem", "cancelado"],
+  triagem: ["em_reparo", "fora_garantia", "aguardando_peca", "cancelado"],
+  fora_garantia: ["em_reparo", "enviado_retorno", "cancelado"],
+  em_reparo: ["aguardando_peca", "pronto", "cancelado"],
+  aguardando_peca: ["em_reparo", "pronto", "cancelado"],
+  pronto: ["enviado_retorno", "finalizado", "cancelado"],
+  enviado_retorno: ["finalizado", "cancelado"],
+  finalizado: [],
+  cancelado: [],
+};
+
+// Status atual + próximos válidos (para o select de mudança de status).
+export function statusOptions(current: CaseStatus): CaseStatus[] {
+  return [current, ...TRANSITIONS[current].filter((s) => s !== current)];
+}
 
 export const AREAS: Area[] = ["Carlcare", "TFAE", "Comercial", "HQ"];
 

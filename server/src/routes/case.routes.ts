@@ -1,13 +1,17 @@
 import { Router } from "express";
 import { validate } from "../middleware/validate";
 import { createCaseSchema, updateStatusSchema } from "../dto/case.dto";
+import { addShipmentSchema } from "../dto/shipment.dto";
+import { updateGarantiaSchema } from "../dto/garantia.dto";
 import type { CaseController } from "../controllers/case.controller";
 
 export function caseRoutes(controller: CaseController): Router {
   const router = Router();
-  router.get("/", controller.list);
+  router.get("/", controller.list); // suporta ?imei=
   router.get("/:id", controller.getById);
   router.post("/", validate(createCaseSchema), controller.create);
   router.patch("/:id/status", validate(updateStatusSchema), controller.updateStatus);
+  router.patch("/:id/garantia", validate(updateGarantiaSchema), controller.updateGarantia);
+  router.post("/:id/shipments", validate(addShipmentSchema), controller.addShipment);
   return router;
 }

@@ -6,6 +6,7 @@ import type {
   ClientForm,
   Conversation,
   ServiceCase,
+  ShipmentDirection,
 } from "../types";
 import type { NewCaseInput } from "../context/CrmContext";
 
@@ -19,6 +20,27 @@ export interface DashboardStats {
   porStatus: { status: CaseStatus; total: number }[];
 }
 
+export interface GarantiaInput {
+  queda: boolean;
+  agua: boolean;
+  aberto: boolean;
+  aparelhoLiga: boolean;
+}
+
+export interface ShipmentInput {
+  direcao: ShipmentDirection;
+  codigoRastreio?: string;
+  enviadoEm?: string;
+  transportadora?: string;
+}
+
+export interface TemplateSummary {
+  id: string;
+  nome: string;
+  descricao: string;
+  requiresValidated: boolean;
+}
+
 // Camada de acesso à API: cada método mapeia 1:1 para um endpoint REST.
 export const crmApi = {
   listCases: () => http.get<ServiceCase[]>("/cases"),
@@ -26,6 +48,12 @@ export const crmApi = {
     http.post<ServiceCase>("/cases", input),
   updateCaseStatus: (id: string, status: CaseStatus, by: string, note?: string) =>
     http.patch<ServiceCase>(`/cases/${id}/status`, { status, by, note }),
+  updateGarantia: (id: string, g: GarantiaInput) =>
+    http.patch<ServiceCase>(`/cases/${id}/garantia`, g),
+  addShipment: (id: string, s: ShipmentInput) =>
+    http.post<ServiceCase>(`/cases/${id}/shipments`, s),
+  findByImei: (imei: string) =>
+    http.get<ServiceCase[]>(`/cases?imei=${encodeURIComponent(imei)}`),
 
   listConversations: () => http.get<Conversation[]>("/conversations"),
   addMessage: (id: string, text: string, from: "cliente" | "agente" = "agente") =>
@@ -41,4 +69,10 @@ export const crmApi = {
     http.post<Client>(`/clients/${telefoneKey}/form`, form),
 
   getStats: () => http.get<DashboardStats>("/stats"),
+
+  listTemplates: () => http.get<TemplateSummary[]>("/templates"),
+  sendTemplate: (conversationId: string, templateId: string) =>
+    http.post<Conversation>(`/conversations/${conversationId}/templates`, {
+      templateId,
+    }),
 };

@@ -7,8 +7,6 @@ import type {
   StatusEvent,
 } from "../domain/types";
 
-// Linhas cruas do banco (snake_case). Ficam encapsuladas no repositório —
-// nenhuma outra camada conhece esse formato.
 interface CaseRow {
   id: string;
   cliente: string;
@@ -23,6 +21,11 @@ interface CaseRow {
   area: string;
   responsavel: string;
   canal: string;
+  garantia_queda: number;
+  garantia_agua: number;
+  garantia_aberto: number;
+  aparelho_liga: number;
+  validado_em: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,10 +38,20 @@ interface EventRow {
   note: string | null;
 }
 
+export interface GarantiaInput {
+  queda: boolean;
+  agua: boolean;
+  aberto: boolean;
+  aparelhoLiga: boolean;
+}
+
 // Porta (interface) — os serviços dependem desta abstração, não do SQLite (DIP).
+// `shipments` NÃO é responsabilidade deste repo (vem do ShipmentRepository);
+// o serviço compõe os dois. Aqui sempre devolvemos `shipments: []`.
 export interface CaseRepository {
   findAll(): ServiceCase[];
   findById(id: string): ServiceCase | null;
+  findByImei(imei: string): ServiceCase[];
   insert(c: ServiceCase): void;
   appendStatus(
     id: string,
@@ -46,10 +59,10 @@ export interface CaseRepository {
     updatedAt: string,
     event: StatusEvent
   ): void;
+  updateGarantia(id: string, g: GarantiaInput, updatedAt: string): void;
   nextId(): string;
 }
 
-// Adaptador SQLite.
 export class SqliteCaseRepository implements CaseRepository {
   constructor(private readonly db: Database.Database) {}
 
@@ -75,21 +88,22 @@ export class SqliteCaseRepository implements CaseRepository {
       | CaseRow
       | undefined;
     if (!row) return null;
-    const events = this.db
-      .prepare("SELECT * FROM case_status_events WHERE case_id = ? ORDER BY id ASC")
-      .all(id) as EventRow[];
-    return this.mapCase(
-      row,
-      events.map((e) => this.mapEvent(e))
-    );
+    return this.mapCase(row, this.loadEvents(id));
+  }
+
+  findByImei(imei: string): ServiceCase[] {
+    const rows = this.db
+      .prepare("SELECT * FROM cases WHERE imei = ? ORDER BY updated_at DESC")
+      .all(imei) as CaseRow[];
+    return rows.map((r) => this.mapCase(r, this.loadEvents(r.id)));
   }
 
   insert(c: ServiceCase): void {
     const tx = this.db.transaction((caso: ServiceCase) => {
       this.db
         .prepare(
-          `INSERT INTO cases (id, cliente, telefone, cidade, estado, marca, modelo, imei, defeito, status, area, responsavel, canal, created_at, updated_at)
-           VALUES (@id, @cliente, @telefone, @cidade, @estado, @marca, @modelo, @imei, @defeito, @status, @area, @responsavel, @canal, @createdAt, @updatedAt)`
+          `INSERT INTO cases (id, cliente, telefone, cidade, estado, marca, modelo, imei, defeito, status, area, responsavel, canal, garantia_queda, garantia_agua, garantia_aberto, aparelho_liga, validado_em, created_at, updated_at)
+           VALUES (@id, @cliente, @telefone, @cidade, @estado, @marca, @modelo, @imei, @defeito, @status, @area, @responsavel, @canal, @garantiaQueda, @garantiaAgua, @garantiaAberto, @aparelhoLiga, @validadoEm, @createdAt, @updatedAt)`
         )
         .run({
           id: caso.id,
@@ -105,6 +119,11 @@ export class SqliteCaseRepository implements CaseRepository {
           area: caso.area,
           responsavel: caso.responsavel,
           canal: caso.canal,
+          garantiaQueda: caso.garantiaQueda ? 1 : 0,
+          garantiaAgua: caso.garantiaAgua ? 1 : 0,
+          garantiaAberto: caso.garantiaAberto ? 1 : 0,
+          aparelhoLiga: caso.aparelhoLiga ? 1 : 0,
+          validadoEm: caso.validadoEm,
           createdAt: caso.createdAt,
           updatedAt: caso.updatedAt,
         });
@@ -125,9 +144,18 @@ export class SqliteCaseRepository implements CaseRepository {
     event: StatusEvent
   ): void {
     const tx = this.db.transaction(() => {
-      this.db
-        .prepare("UPDATE cases SET status = ?, updated_at = ? WHERE id = ?")
-        .run(status, updatedAt, id);
+      // Ao validar, grava a data de validação (gate) — sem sobrescrever se já houver.
+      if (status === "validado") {
+        this.db
+          .prepare(
+            "UPDATE cases SET status = ?, updated_at = ?, validado_em = COALESCE(validado_em, ?) WHERE id = ?"
+          )
+          .run(status, updatedAt, updatedAt, id);
+      } else {
+        this.db
+          .prepare("UPDATE cases SET status = ?, updated_at = ? WHERE id = ?")
+          .run(status, updatedAt, id);
+      }
       this.db
         .prepare(
           "INSERT INTO case_status_events (case_id, status, at, by_who, note) VALUES (?, ?, ?, ?, ?)"
@@ -137,7 +165,14 @@ export class SqliteCaseRepository implements CaseRepository {
     tx();
   }
 
-  // Gera o próximo identificador legível (CC-AAAA-NNNN).
+  updateGarantia(id: string, g: GarantiaInput, updatedAt: string): void {
+    this.db
+      .prepare(
+        "UPDATE cases SET garantia_queda = ?, garantia_agua = ?, garantia_aberto = ?, aparelho_liga = ?, updated_at = ? WHERE id = ?"
+      )
+      .run(g.queda ? 1 : 0, g.agua ? 1 : 0, g.aberto ? 1 : 0, g.aparelhoLiga ? 1 : 0, updatedAt, id);
+  }
+
   nextId(): string {
     const rows = this.db.prepare("SELECT id FROM cases").all() as { id: string }[];
     const max = rows.reduce((acc, r) => {
@@ -147,7 +182,13 @@ export class SqliteCaseRepository implements CaseRepository {
     return `CC-${new Date().getFullYear()}-${String(max + 1).padStart(4, "0")}`;
   }
 
-  // ── Mapeadores (anti-corruption: traduzem linha do banco ↔ domínio) ──
+  private loadEvents(id: string): StatusEvent[] {
+    const events = this.db
+      .prepare("SELECT * FROM case_status_events WHERE case_id = ? ORDER BY id ASC")
+      .all(id) as EventRow[];
+    return events.map((e) => this.mapEvent(e));
+  }
+
   private mapCase(r: CaseRow, historico: StatusEvent[]): ServiceCase {
     return {
       id: r.id,
@@ -163,9 +204,17 @@ export class SqliteCaseRepository implements CaseRepository {
       area: r.area as Area,
       responsavel: r.responsavel,
       canal: "WhatsApp",
+      garantiaQueda: !!r.garantia_queda,
+      garantiaAgua: !!r.garantia_agua,
+      garantiaAberto: !!r.garantia_aberto,
+      // Conclusão DERIVADA — não persistida, sempre coerente com as causas.
+      foraGarantia: !!(r.garantia_queda || r.garantia_agua || r.garantia_aberto),
+      aparelhoLiga: !!r.aparelho_liga,
+      validadoEm: r.validado_em,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       historico,
+      shipments: [], // preenchido pelo serviço via ShipmentRepository
     };
   }
 

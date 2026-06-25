@@ -3,12 +3,19 @@
 // Independente de banco e de HTTP (não conhece SQL nem Express).
 // ───────────────────────────────────────────────────────────────────────────
 
+// Ciclo de vida do caso no modelo "mail-in" (envio do aparelho).
 export type CaseStatus =
   | "novo"
+  | "validado"
+  | "aguardando_envio"
+  | "em_transito"
+  | "recebido"
   | "triagem"
-  | "aguardando_peca"
+  | "fora_garantia"
   | "em_reparo"
+  | "aguardando_peca"
   | "pronto"
+  | "enviado_retorno"
   | "finalizado"
   | "cancelado";
 
@@ -18,11 +25,23 @@ export type DeviceBrand = "TECNO" | "Infinix" | "itel" | "Syinix" | "Oraimo";
 
 export type FormStatus = "nao_enviado" | "enviado" | "preenchido";
 
+export type ShipmentDirection = "ida" | "volta";
+
 export interface StatusEvent {
   status: CaseStatus;
   at: string; // ISO
   by: string;
   note?: string;
+}
+
+// Remessa (Correios). 1:N com o caso — perna de ida e de volta, com reenvios.
+export interface Shipment {
+  id: number;
+  direcao: ShipmentDirection;
+  codigoRastreio: string | null;
+  enviadoEm: string | null;
+  transportadora: string;
+  criadoEm: string;
 }
 
 export interface ServiceCase {
@@ -39,9 +58,17 @@ export interface ServiceCase {
   area: Area;
   responsavel: string;
   canal: "WhatsApp";
+  // Triagem de garantia (causas) + conclusão DERIVADA.
+  garantiaQueda: boolean;
+  garantiaAgua: boolean;
+  garantiaAberto: boolean;
+  foraGarantia: boolean; // derivado: queda || agua || aberto
+  aparelhoLiga: boolean; // direciona a instrução de IMEI/SN (*#06# x caixa)
+  validadoEm: string | null; // gate: libera o envio do endereço dos Correios
   createdAt: string;
   updatedAt: string;
   historico: StatusEvent[];
+  shipments: Shipment[];
 }
 
 export interface ChatMessage {

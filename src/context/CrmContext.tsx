@@ -19,6 +19,7 @@ import type {
 import { CASES, CLIENTS, CONVERSATIONS } from "../data/mock";
 import { phoneKey, templateFormulario } from "../lib/meta";
 import { crmApi } from "../api/crm.api";
+import type { GarantiaInput, ShipmentInput } from "../api/crm.api";
 
 // Dados para abrir um novo caso a partir do formulário.
 export interface NewCaseInput {
@@ -53,6 +54,9 @@ interface CrmContextValue {
   markRead: (conversationId: string) => void;
   sendForm: (conversationId: string) => void;
   submitForm: (telefoneKey: string, form: ClientForm) => void;
+  updateGarantia: (caseId: string, g: GarantiaInput) => void;
+  addShipment: (caseId: string, s: ShipmentInput) => void;
+  sendTemplate: (conversationId: string, templateId: string) => void;
 }
 
 const CrmContext = createContext<CrmContextValue | null>(null);
@@ -231,6 +235,67 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     void crmApi.submitForm(telefoneKey, form).catch(() => {});
   }, []);
 
+  const updateGarantia = useCallback((caseId: string, g: GarantiaInput) => {
+    const now = new Date().toISOString();
+    setCases((prev) =>
+      prev.map((c) =>
+        c.id === caseId
+          ? {
+              ...c,
+              garantiaQueda: g.queda,
+              garantiaAgua: g.agua,
+              garantiaAberto: g.aberto,
+              aparelhoLiga: g.aparelhoLiga,
+              foraGarantia: g.queda || g.agua || g.aberto,
+              updatedAt: now,
+            }
+          : c
+      )
+    );
+    void crmApi.updateGarantia(caseId, g).catch(() => {});
+  }, []);
+
+  const addShipment = useCallback((caseId: string, s: ShipmentInput) => {
+    const now = new Date().toISOString();
+    setCases((prev) =>
+      prev.map((c) =>
+        c.id === caseId
+          ? {
+              ...c,
+              shipments: [
+                ...(c.shipments ?? []),
+                {
+                  id: Date.now(),
+                  direcao: s.direcao,
+                  codigoRastreio: s.codigoRastreio ?? null,
+                  enviadoEm: s.enviadoEm ?? null,
+                  transportadora: s.transportadora ?? "Correios",
+                  criadoEm: now,
+                },
+              ],
+              updatedAt: now,
+            }
+          : c
+      )
+    );
+    void crmApi.addShipment(caseId, s).catch(() => {});
+  }, []);
+
+  // Templates são renderizados no servidor; atualizamos a conversa pela resposta.
+  const sendTemplate = useCallback(
+    (conversationId: string, templateId: string) => {
+      void crmApi
+        .sendTemplate(conversationId, templateId)
+        .then((updated) =>
+          setConversations((prev) =>
+            prev.map((c) => (c.id === updated.id ? updated : c))
+          )
+        )
+        .catch(() => {});
+    },
+    []
+  );
+
   const value = useMemo<CrmContextValue>(
     () => ({
       cases,
@@ -243,6 +308,9 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       markRead,
       sendForm,
       submitForm,
+      updateGarantia,
+      addShipment,
+      sendTemplate,
     }),
     [
       cases,
@@ -255,6 +323,9 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       markRead,
       sendForm,
       submitForm,
+      updateGarantia,
+      addShipment,
+      sendTemplate,
     ]
   );
 

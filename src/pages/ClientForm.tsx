@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
 import Logo from "../components/Logo";
-import { BRANDS } from "../lib/meta";
+import { BRANDS, phoneKey } from "../lib/meta";
 import type { ClientForm as ClientFormData, DeviceBrand } from "../types";
 
 const EMPTY: ClientFormData = {
@@ -30,9 +30,13 @@ const EMPTY: ClientFormData = {
 // associação não depende do que o cliente digita.
 export default function ClientForm() {
   const { token } = useParams();
-  const { clients, submitForm } = useCrm();
+  const { clients, cases, submitForm } = useCrm();
   const client = clients.find((c) => c.telefoneKey === token);
+  // Caso vinculado pelo telefone — define o default da instrução de IMEI/SN.
+  const casoVinc = cases.find((c) => phoneKey(c.telefone) === token);
+  const defeitoNaoLiga = /n[ãa]o\s+liga/i.test(casoVinc?.defeito ?? "");
   const [form, setForm] = useState<ClientFormData>(client?.form ?? EMPTY);
+  const [aparelhoLiga, setAparelhoLiga] = useState(() => !defeitoNaoLiga);
   const [sent, setSent] = useState(false);
 
   const set = <K extends keyof ClientFormData>(key: K, value: ClientFormData[K]) =>
@@ -191,12 +195,45 @@ export default function ClientForm() {
         </div>
 
         <h2 className="form-section-title">Seu aparelho</h2>
+
+        <div className="liga-toggle">
+          <span>O aparelho liga?</span>
+          <div className="seg">
+            <button
+              type="button"
+              className={"seg-btn" + (aparelhoLiga ? " active" : "")}
+              onClick={() => setAparelhoLiga(true)}
+            >
+              Sim
+            </button>
+            <button
+              type="button"
+              className={"seg-btn" + (!aparelhoLiga ? " active" : "")}
+              onClick={() => setAparelhoLiga(false)}
+            >
+              Não
+            </button>
+          </div>
+        </div>
+
         <div className="callout">
-          <strong>📱 Onde encontrar IMEI 1, IMEI 2 e número de série (SN)?</strong>
-          <p>
-            No seu aparelho, abra o teclado de chamada e digite <code>*#06#</code>. Os
-            códigos aparecem na tela — basta copiar abaixo.
-          </p>
+          {aparelhoLiga ? (
+            <>
+              <strong>📱 Onde encontrar IMEI 1, IMEI 2 e número de série (SN)?</strong>
+              <p>
+                Abra o teclado de chamada e digite <code>*#06#</code>. Os códigos
+                aparecem na tela — basta copiar abaixo.
+              </p>
+            </>
+          ) : (
+            <>
+              <strong>📦 Aparelho não liga? Use a caixa.</strong>
+              <p>
+                Localize o IMEI 1, IMEI 2 e o número de série (SN) na{" "}
+                <code>etiqueta da caixa</code> em que o aparelho veio e copie abaixo.
+              </p>
+            </>
+          )}
         </div>
         <div className="form-grid bare">
           <label className="field">
