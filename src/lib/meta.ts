@@ -41,7 +41,7 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
   recebido: { label: "Recebido", color: "#14b8a6" },
   triagem: { label: "Triagem", color: "#6366f1" },
   fora_garantia: { label: "Fora de garantia", color: "#db2777" },
-  em_reparo: { label: "Em reparo", color: "#0d6efd" },
+  em_reparo: { label: "Em reparo", color: "#0079c1" },
   aguardando_peca: { label: "Aguardando peça", color: "#d97706" },
   pronto: { label: "Pronto", color: "#0ea5a4" },
   enviado_retorno: { label: "Enviado (retorno)", color: "#7c3aed" },
