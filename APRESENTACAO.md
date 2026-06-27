@@ -99,9 +99,7 @@ correto de primeira e conformidade com a LGPD (consentimento; IMEI mascarado).
 com 13 testes automatizados.
 
 **Próximos passos:**
-1. **Relatório de defeitos** por modelo/marca/área e taxa fora de garantia
-   (análise do TFAE/Gestão) — pode ser feito já sobre os dados atuais.
-2. Integração com a **WhatsApp Business API** (envio real das mensagens).
-3. **Banco de produção** (PostgreSQL/Supabase).
-4. **Login e permissões** por equipe.
-5. **Piloto** com 20 a 50 atendimentos reais.
+1. Integração com a **WhatsApp Business API** (envio real das mensagens).
+2. **Banco de produção** (PostgreSQL/Supabase).
+3. **Login e permissões** por equipe.
+4. **Piloto** com 20 a 50 atendimentos reais.
