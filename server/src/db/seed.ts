@@ -136,6 +136,14 @@ function seed(): void {
       }
     }
 
+    // Marca alguns casos como fora de garantia (alimenta o relatório de defeitos).
+    db.prepare(
+      "UPDATE cases SET garantia_queda = 1, aparelho_liga = 0 WHERE id = 'CC-2026-0001'"
+    ).run();
+    db.prepare(
+      "UPDATE cases SET garantia_aberto = 1 WHERE id = 'CC-2026-0008'"
+    ).run();
+
     for (const cl of CLIENTS) {
       insClient.run({
         telefoneKey: cl.telefoneKey,

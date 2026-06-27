@@ -6,6 +6,7 @@ import {
   IconCases,
   IconDashboard,
   IconInbox,
+  IconReport,
   IconSearch,
 } from "./icons";
 import { useCrm } from "../context/CrmContext";
@@ -34,6 +35,7 @@ export default function Layout() {
     { to: "/inbox", label: "Caixa de entrada", icon: <IconInbox />, badge: unread },
     { to: "/casos", label: "Casos", icon: <IconCases /> },
     { to: "/automacoes", label: "Automações", icon: <IconAutomation /> },
+    { to: "/relatorio", label: "Relatório", icon: <IconReport /> },
   ];
 
   return (

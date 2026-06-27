@@ -6,6 +6,7 @@ import Inbox from "./pages/Inbox";
 import Cases from "./pages/Cases";
 import CaseDetail from "./pages/CaseDetail";
 import Automations from "./pages/Automations";
+import Reports from "./pages/Reports";
 import ClientForm from "./pages/ClientForm";
 
 // SPA com roteamento por hash (funciona em hospedagem estática como GitHub Pages).
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="casos" element={<Cases />} />
             <Route path="casos/:id" element={<CaseDetail />} />
             <Route path="automacoes" element={<Automations />} />
+            <Route path="relatorio" element={<Reports />} />
             <Route path="*" element={<Dashboard />} />
           </Route>
         </Routes>
