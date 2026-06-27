@@ -32,6 +32,9 @@ export const CASES: ServiceCase[] = [
     area: "Carlcare",
     responsavel: "Beatriz Nunes",
     canal: "WhatsApp",
+    garantiaQueda: true,
+    foraGarantia: true,
+    aparelhoLiga: false,
     createdAt: d(3),
     updatedAt: h(5),
     historico: [
@@ -185,6 +188,8 @@ export const CASES: ServiceCase[] = [
     area: "Comercial",
     responsavel: "Diego Martins",
     canal: "WhatsApp",
+    garantiaAberto: true,
+    foraGarantia: true,
     createdAt: d(4),
     updatedAt: d(2),
     historico: [
