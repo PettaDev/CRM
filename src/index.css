@@ -1455,11 +1455,20 @@ textarea.input {
 /* ── Login / sessão ───────────────────────────────────────────────────────── */
 
 .login-page {
+  position: relative;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 24px;
   background: var(--bg);
+}
+.login-controls {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .login-card {
   width: 100%;

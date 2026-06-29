@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../components/Logo";
+import { IconMoon, IconSun } from "../components/icons";
 import { useAuth } from "../auth/AuthContext";
 import { useT } from "../settings/SettingsContext";
+import { LANGS, type Lang } from "../i18n/dictionaries";
 
 export default function Login() {
   const { login } = useAuth();
-  const { t } = useT();
+  const { t, lang, setLang, theme, toggleTheme } = useT();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -30,6 +32,29 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <div className="login-controls">
+        <select
+          className="lang-select"
+          value={lang}
+          onChange={(e) => setLang(e.target.value as Lang)}
+          aria-label="Idioma / Language"
+        >
+          {LANGS.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+        <button
+          className="icon-btn"
+          onClick={toggleTheme}
+          aria-label={t("topbar.theme")}
+          title={t("topbar.theme")}
+        >
+          {theme === "dark" ? <IconSun /> : <IconMoon />}
+        </button>
+      </div>
+
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-brand">
           <Logo />
