@@ -16,6 +16,10 @@ import { ClientController } from "./controllers/client.controller";
 import { ConversationController } from "./controllers/conversation.controller";
 import { StatsController } from "./controllers/stats.controller";
 import { TemplateController } from "./controllers/template.controller";
+import { SqliteUserRepository } from "./repositories/user.repository";
+import { AuthService } from "./services/auth.service";
+import { AuthController } from "./controllers/auth.controller";
+import { requireAuth as makeRequireAuth } from "./middleware/require-auth";
 import { createApp } from "./app";
 
 // ─── Composition Root ───
@@ -30,8 +34,11 @@ const clientRepo = new SqliteClientRepository(db);
 const conversationRepo = new SqliteConversationRepository(db);
 const shipmentRepo = new SqliteShipmentRepository(db);
 const statsRepo = new SqliteStatsRepository(db);
+const userRepo = new SqliteUserRepository(db);
 
 const templateService = new TemplateService();
+const authService = new AuthService(userRepo, config.jwtSecret);
+const requireAuth = makeRequireAuth(authService);
 
 const controllers = {
   cases: new CaseController(new CaseService(caseRepo, shipmentRepo)),
@@ -47,9 +54,10 @@ const controllers = {
   ),
   stats: new StatsController(new StatsService(statsRepo)),
   templates: new TemplateController(templateService),
+  auth: new AuthController(authService),
 };
 
-const app = createApp(controllers);
+const app = createApp(controllers, requireAuth);
 app.listen(config.port, () => {
   console.log(
     `🚀 API Carlcare CRM em http://localhost:${config.port}/api  (origem CORS: ${config.corsOrigin})`

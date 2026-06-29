@@ -12,6 +12,7 @@ export interface AppConfig {
   port: number;
   corsOrigin: string;
   databaseFile: string;
+  jwtSecret: string;
 }
 
 export const config: AppConfig = {
@@ -21,4 +22,5 @@ export const config: AppConfig = {
     process.cwd(),
     process.env.DATABASE_FILE ?? "data/carlcare.sqlite"
   ),
+  jwtSecret: process.env.JWT_SECRET ?? "dev-secret-troque-em-producao",
 };

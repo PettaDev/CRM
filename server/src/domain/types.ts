@@ -25,6 +25,16 @@ export type DeviceBrand = "TECNO" | "Infinix" | "itel" | "Syinix" | "Oraimo";
 
 export type FormStatus = "nao_enviado" | "enviado" | "preenchido";
 
+// Usuário interno (agente/gestor) — sem a senha, que nunca sai da camada de auth.
+export type Role = "agente" | "gestor";
+export interface User {
+  id: string;
+  nome: string;
+  email: string;
+  area: Area;
+  role: Role;
+}
+
 export type ShipmentDirection = "ida" | "volta";
 
 export interface StatusEvent {

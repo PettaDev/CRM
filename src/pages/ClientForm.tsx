@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useCrm } from "../context/CrmContext";
 import Logo from "../components/Logo";
-import { BRANDS, phoneKey } from "../lib/meta";
-import type { ClientForm as ClientFormData, DeviceBrand } from "../types";
+import { BRANDS } from "../lib/meta";
+import { crmApi } from "../api/crm.api";
+import type { Client, ClientForm as ClientFormData, DeviceBrand } from "../types";
 
 const EMPTY: ClientFormData = {
   nomeCompleto: "",
@@ -70,17 +70,40 @@ type CepStatus = "idle" | "loading" | "ok" | "error";
 // O telefone vem da plataforma (token = telefoneKey) e fica travado.
 export default function ClientForm() {
   const { token } = useParams();
-  const { clients, cases, submitForm } = useCrm();
-  const client = clients.find((c) => c.telefoneKey === token);
-  // Caso vinculado pelo telefone — define o default da instrução de IMEI/SN.
-  const casoVinc = cases.find((c) => phoneKey(c.telefone) === token);
-  const defeitoNaoLiga = /n[ãa]o\s+liga/i.test(casoVinc?.defeito ?? "");
-
-  const [form, setForm] = useState<ClientFormData>(client?.form ?? EMPTY);
-  const [aparelhoLiga, setAparelhoLiga] = useState(() => !defeitoNaoLiga);
+  const [client, setClient] = useState<Client | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState<ClientFormData>(EMPTY);
+  const [aparelhoLiga, setAparelhoLiga] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [cepStatus, setCepStatus] = useState<CepStatus>("idle");
   const [sent, setSent] = useState(false);
+  const [submitErr, setSubmitErr] = useState("");
+
+  // Carrega o próprio cadastro pelo token (endpoint público) — independente de
+  // login e do contexto do app de agentes.
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    crmApi
+      .getClient(token)
+      .then((c) => {
+        if (cancelled) return;
+        setClient(c);
+        if (c.form) setForm(c.form);
+      })
+      .catch(() => {
+        if (!cancelled) setClient(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const set = <K extends keyof ClientFormData>(key: K, value: ClientFormData[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -127,6 +150,17 @@ export default function ClientForm() {
     };
   }, [form.cep]);
 
+  if (loading) {
+    return (
+      <div className="form-page">
+        <div className="form-page-card">
+          <Logo />
+          <p className="muted">Carregando…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!token || !client) {
     return (
       <div className="form-page">
@@ -160,15 +194,20 @@ export default function ClientForm() {
 
   const errors = validate(form);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (Object.keys(errors).length > 0) {
       setSubmitted(true);
       return;
     }
     if (!token) return;
-    submitForm(token, form);
-    setSent(true);
+    setSubmitErr("");
+    try {
+      await crmApi.submitForm(token, form);
+      setSent(true);
+    } catch {
+      setSubmitErr("Não foi possível enviar. Tente novamente.");
+    }
   }
 
   // Helpers de exibição de erro.
@@ -430,6 +469,7 @@ export default function ClientForm() {
           </span>
         </label>
 
+        {submitErr && <div className="login-error">{submitErr}</div>}
         <button className="btn btn-primary full" type="submit">
           Enviar cadastro
         </button>

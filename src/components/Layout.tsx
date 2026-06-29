@@ -6,12 +6,14 @@ import {
   IconCases,
   IconDashboard,
   IconInbox,
+  IconLogout,
   IconMoon,
   IconReport,
   IconSearch,
   IconSun,
 } from "./icons";
 import { useCrm } from "../context/CrmContext";
+import { useAuth } from "../auth/AuthContext";
 import { useT } from "../settings/SettingsContext";
 import { LANGS, type Lang } from "../i18n/dictionaries";
 import type { ReactNode } from "react";
@@ -26,7 +28,15 @@ interface NavItem {
 export default function Layout() {
   const { conversations, apiStatus } = useCrm();
   const { t, lang, setLang, theme, toggleTheme } = useT();
+  const { user, logout } = useAuth();
   const unread = conversations.reduce((n, c) => n + (c.unread > 0 ? 1 : 0), 0);
+
+  const initials = (user?.nome ?? "")
+    .split(" ")
+    .slice(0, 2)
+    .map((p) => p[0] ?? "")
+    .join("")
+    .toUpperCase();
 
   const apiLabel =
     apiStatus === "online"
@@ -67,11 +77,14 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-user">
-          <div className="avatar">BN</div>
+          <div className="avatar">{initials}</div>
           <div className="sidebar-user-info">
-            <strong>Beatriz Nunes</strong>
-            <span>Carlcare · {t("nav.section")}</span>
+            <strong>{user?.nome}</strong>
+            <span>Carlcare · {user?.area}</span>
           </div>
+          <button className="icon-btn logout-btn" onClick={logout} title={t("logout")}>
+            <IconLogout />
+          </button>
         </div>
       </aside>
 
@@ -113,7 +126,7 @@ export default function Layout() {
               <IconBell />
               {unread > 0 && <span className="icon-btn-dot" />}
             </button>
-            <div className="avatar avatar-sm">BN</div>
+            <div className="avatar avatar-sm">{initials}</div>
           </div>
         </header>
 
