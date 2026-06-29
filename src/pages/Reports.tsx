@@ -1,11 +1,13 @@
 import { useMemo } from "react";
 import { useCrm } from "../context/CrmContext";
+import { useT } from "../settings/SettingsContext";
 import { AREAS } from "../lib/meta";
 
 // Relatório de defeitos para análise do TFAE / Gestão.
 // Calculado sobre os casos atuais (funciona com mock ou com dados da API).
 export default function Reports() {
   const { cases } = useCrm();
+  const { t } = useT();
 
   const r = useMemo(() => {
     const total = cases.length;
@@ -46,23 +48,23 @@ export default function Reports() {
     <div className="stack-lg">
       <div className="page-head">
         <div>
-          <h1>Relatório de defeitos</h1>
-          <p className="muted">Análise dos atendimentos · TFAE / Gestão</p>
+          <h1>{t("report.title")}</h1>
+          <p className="muted">{t("report.subtitle")}</p>
         </div>
       </div>
 
       <div className="kpi-grid">
-        <ReportKpi label="Total de casos" value={r.total} accent="#0079c1" />
-        <ReportKpi label="Fora de garantia" value={r.fora} accent="#db2777" />
-        <ReportKpi label="Taxa fora de garantia" value={`${r.taxa}%`} accent="#f59e0b" />
-        <ReportKpi label="Modelos distintos" value={modelosDistintos} accent="#3ab54a" />
+        <ReportKpi label={t("report.totalCases")} value={r.total} accent="#0079c1" />
+        <ReportKpi label={t("report.outOfWarranty")} value={r.fora} accent="#db2777" />
+        <ReportKpi label={t("report.outOfWarrantyRate")} value={`${r.taxa}%`} accent="#f59e0b" />
+        <ReportKpi label={t("report.distinctModels")} value={modelosDistintos} accent="#3ab54a" />
       </div>
 
       <div className="grid-2">
         <section className="card">
           <div className="card-head">
-            <h2>Defeitos mais comuns</h2>
-            <span className="muted">ocorrências</span>
+            <h2>{t("report.commonDefects")}</h2>
+            <span className="muted">{t("report.occurrences")}</span>
           </div>
           <div className="bar-list">
             {r.porDefeito.map((d) => (
@@ -84,8 +86,8 @@ export default function Reports() {
 
         <section className="card">
           <div className="card-head">
-            <h2>Casos por área</h2>
-            <span className="muted">distribuição</span>
+            <h2>{t("report.byArea")}</h2>
+            <span className="muted">{t("dash.distribution")}</span>
           </div>
           <div className="bar-list">
             {r.porArea.map((a) => (
@@ -111,17 +113,15 @@ export default function Reports() {
           <table className="table">
             <thead>
               <tr>
-                <th>Aparelho que mais falha</th>
-                <th>Marca</th>
-                <th>Casos</th>
+                <th>{t("report.topDevices")}</th>
+                <th>{t("nav.cases")}</th>
               </tr>
             </thead>
             <tbody>
               {r.porModelo.map((m) => (
                 <tr key={`${m.marca}-${m.modelo}`}>
-                  <td>{m.modelo}</td>
                   <td>
-                    <span className="chip">{m.marca}</span>
+                    <span className="chip">{m.marca}</span> {m.modelo}
                   </td>
                   <td>{m.total}</td>
                 </tr>

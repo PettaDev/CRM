@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
+import { useT } from "../settings/SettingsContext";
 import StatusBadge from "../components/StatusBadge";
 import { IconSend } from "../components/icons";
 import {
@@ -20,6 +21,7 @@ import type { TemplateSummary } from "../api/crm.api";
 export default function Inbox() {
   const { conversations, cases, clients, sendMessage, markRead, sendForm, sendTemplate } =
     useCrm();
+  const { t } = useT();
   const [selectedId, setSelectedId] = useState<string>(
     conversations[0] ? conversations[0].id : ""
   );
@@ -60,7 +62,7 @@ export default function Inbox() {
       {/* Lista de conversas */}
       <div className="inbox-list">
         <div className="inbox-list-head">
-          <h2>Conversas</h2>
+          <h2>{t("inbox.conversations")}</h2>
           <span className="chip">{ordered.length}</span>
         </div>
         <div className="inbox-list-scroll">
@@ -168,7 +170,7 @@ export default function Inbox() {
             >
               <input
                 className="input"
-                placeholder="Escreva uma mensagem…"
+                placeholder={t("inbox.composer")}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
               />
@@ -192,13 +194,13 @@ export default function Inbox() {
               className={"seg-btn" + (sideTab === "caso" ? " active" : "")}
               onClick={() => setSideTab("caso")}
             >
-              Caso
+              {t("inbox.caso")}
             </button>
             <button
               className={"seg-btn" + (sideTab === "cliente" ? " active" : "")}
               onClick={() => setSideTab("cliente")}
             >
-              Cliente
+              {t("inbox.cliente")}
             </button>
           </div>
 

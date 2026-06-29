@@ -1,4 +1,5 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
+import { SettingsProvider } from "./settings/SettingsContext";
 import { CrmProvider } from "./context/CrmContext";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -12,8 +13,9 @@ import ClientForm from "./pages/ClientForm";
 // SPA com roteamento por hash (funciona em hospedagem estática como GitHub Pages).
 export default function App() {
   return (
-    <CrmProvider>
-      <HashRouter>
+    <SettingsProvider>
+      <CrmProvider>
+        <HashRouter>
         <Routes>
           {/* Página pública do formulário (sem sidebar) — link enviado ao cliente */}
           <Route path="form/:token" element={<ClientForm />} />
@@ -27,7 +29,8 @@ export default function App() {
             <Route path="*" element={<Dashboard />} />
           </Route>
         </Routes>
-      </HashRouter>
-    </CrmProvider>
+        </HashRouter>
+      </CrmProvider>
+    </SettingsProvider>
   );
 }

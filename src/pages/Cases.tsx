@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
 import type { NewCaseInput } from "../context/CrmContext";
+import { useT } from "../settings/SettingsContext";
 import StatusBadge from "../components/StatusBadge";
 import { IconPlus } from "../components/icons";
 import { AGENTS } from "../data/mock";
@@ -19,6 +20,7 @@ type View = "tabela" | "kanban";
 
 export default function Cases() {
   const { cases } = useCrm();
+  const { t } = useT();
   const [view, setView] = useState<View>("tabela");
   const [status, setStatus] = useState<CaseStatus | "todos">("todos");
   const [area, setArea] = useState<Area | "todas">("todas");
@@ -44,13 +46,13 @@ export default function Cases() {
     <div className="stack-lg">
       <div className="page-head">
         <div>
-          <h1>Casos</h1>
+          <h1>{t("cases.title")}</h1>
           <p className="muted">
-            {filtered.length} de {cases.length} atendimentos
+            {filtered.length} / {cases.length} {t("common.cases")}
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowNew(true)}>
-          <IconPlus width={18} height={18} /> Novo caso
+          <IconPlus width={18} height={18} /> {t("common.newCase")}
         </button>
       </div>
 
@@ -60,19 +62,19 @@ export default function Cases() {
             className={"seg-btn" + (view === "tabela" ? " active" : "")}
             onClick={() => setView("tabela")}
           >
-            Tabela
+            {t("cases.table")}
           </button>
           <button
             className={"seg-btn" + (view === "kanban" ? " active" : "")}
             onClick={() => setView("kanban")}
           >
-            Kanban
+            {t("cases.kanban")}
           </button>
         </div>
 
         <input
           className="input"
-          placeholder="Buscar cliente, IMEI, modelo…"
+          placeholder={t("cases.search")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -82,10 +84,10 @@ export default function Cases() {
           value={status}
           onChange={(e) => setStatus(e.target.value as CaseStatus | "todos")}
         >
-          <option value="todos">Todos os status</option>
+          <option value="todos">{t("cases.allStatuses")}</option>
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s}>
-              {STATUS_META[s].label}
+              {t(`status.${s}`)}
             </option>
           ))}
         </select>
@@ -95,7 +97,7 @@ export default function Cases() {
           value={area}
           onChange={(e) => setArea(e.target.value as Area | "todas")}
         >
-          <option value="todas">Todas as áreas</option>
+          <option value="todas">{t("cases.allAreas")}</option>
           {AREAS.map((a) => (
             <option key={a} value={a}>
               {a}
@@ -110,15 +112,15 @@ export default function Cases() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Atendimento</th>
-                  <th>Cliente</th>
-                  <th>Aparelho</th>
-                  <th>IMEI</th>
-                  <th>Cidade/UF</th>
-                  <th>Defeito</th>
-                  <th>Área</th>
-                  <th>Status</th>
-                  <th>Atualizado</th>
+                  <th>{t("th.case")}</th>
+                  <th>{t("th.client")}</th>
+                  <th>{t("th.device")}</th>
+                  <th>{t("th.imei")}</th>
+                  <th>{t("th.cityState")}</th>
+                  <th>{t("th.defect")}</th>
+                  <th>{t("th.area")}</th>
+                  <th>{t("th.status")}</th>
+                  <th>{t("th.updated")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,7 +152,7 @@ export default function Cases() {
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={9} className="empty">
-                      Nenhum caso encontrado com esses filtros.
+                      {t("cases.empty")}
                     </td>
                   </tr>
                 )}
@@ -169,7 +171,7 @@ export default function Cases() {
                     className="kanban-dot"
                     style={{ background: STATUS_META[s].color }}
                   />
-                  <strong>{STATUS_META[s].label}</strong>
+                  <strong>{t(`status.${s}`)}</strong>
                   <span className="kanban-count">{col.length}</span>
                 </div>
                 <div className="kanban-cards">
