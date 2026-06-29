@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
+import { useT } from "../settings/SettingsContext";
 import StatusBadge from "../components/StatusBadge";
 import { IconPhone, IconPin } from "../components/icons";
 import {
@@ -16,6 +17,7 @@ import type { CaseStatus, ShipmentDirection } from "../types";
 export default function CaseDetail() {
   const { id } = useParams();
   const { cases, updateCaseStatus, updateGarantia, addShipment } = useCrm();
+  const { t } = useT();
   const caso = cases.find((c) => c.id === id);
 
   const [novoStatus, setNovoStatus] = useState<CaseStatus>(() => caso?.status ?? "novo");
@@ -147,7 +149,7 @@ export default function CaseDetail() {
               >
                 {statusOptions(caso.status).map((s) => (
                   <option key={s} value={s}>
-                    {STATUS_META[s].label}
+                    {t(`status.${s}`)}
                   </option>
                 ))}
               </select>

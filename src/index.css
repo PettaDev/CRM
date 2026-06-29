@@ -37,6 +37,65 @@
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
+/* ── Tema escuro — sobrescreve os tokens; o resto da UI acompanha sozinho ──── */
+:root[data-theme="dark"] {
+  --bg: #0e1622;
+  --surface: #161f2c;
+  --surface-2: #1d2736;
+  --border: #2a3647;
+  --border-strong: #3a4a5f;
+  --text: #e7ecf4;
+  --muted: #94a1b5;
+  --brand-light: #18293f;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+/* Ajustes pontuais de cores que estavam fixas (não vinham de variável). */
+:root[data-theme="dark"] .nav-link,
+:root[data-theme="dark"] .icon-btn,
+:root[data-theme="dark"] .info-line,
+:root[data-theme="dark"] .kanban-card-device,
+:root[data-theme="dark"] .liga-toggle > span,
+:root[data-theme="dark"] .field > span {
+  color: #c6d0de;
+}
+:root[data-theme="dark"] .chip {
+  color: #b8c2d2;
+}
+:root[data-theme="dark"] .link,
+:root[data-theme="dark"] .link-btn,
+:root[data-theme="dark"] .nav-link.active,
+:root[data-theme="dark"] .btn-ghost {
+  color: #7bbdec;
+}
+:root[data-theme="dark"] .wa-bubble {
+  color: var(--text);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .callout {
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .callout code,
+:root[data-theme="dark"] .wa-bubble code {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: #7bbdec;
+}
+
+/* Seletor de idioma na topbar */
+.lang-select {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0 8px;
+  height: 38px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 * {
   box-sizing: border-box;
 }

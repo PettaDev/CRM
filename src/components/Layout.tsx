@@ -6,10 +6,14 @@ import {
   IconCases,
   IconDashboard,
   IconInbox,
+  IconMoon,
   IconReport,
   IconSearch,
+  IconSun,
 } from "./icons";
 import { useCrm } from "../context/CrmContext";
+import { useT } from "../settings/SettingsContext";
+import { LANGS, type Lang } from "../i18n/dictionaries";
 import type { ReactNode } from "react";
 
 interface NavItem {
@@ -21,21 +25,22 @@ interface NavItem {
 
 export default function Layout() {
   const { conversations, apiStatus } = useCrm();
+  const { t, lang, setLang, theme, toggleTheme } = useT();
   const unread = conversations.reduce((n, c) => n + (c.unread > 0 ? 1 : 0), 0);
 
   const apiLabel =
     apiStatus === "online"
-      ? "API conectada"
+      ? t("topbar.apiOnline")
       : apiStatus === "offline"
-        ? "API offline (mock)"
-        : "Conectando…";
+        ? t("topbar.apiOffline")
+        : t("topbar.apiChecking");
 
   const items: NavItem[] = [
-    { to: "/", label: "Visão geral", icon: <IconDashboard /> },
-    { to: "/inbox", label: "Caixa de entrada", icon: <IconInbox />, badge: unread },
-    { to: "/casos", label: "Casos", icon: <IconCases /> },
-    { to: "/automacoes", label: "Automações", icon: <IconAutomation /> },
-    { to: "/relatorio", label: "Relatório", icon: <IconReport /> },
+    { to: "/", label: t("nav.overview"), icon: <IconDashboard /> },
+    { to: "/inbox", label: t("nav.inbox"), icon: <IconInbox />, badge: unread },
+    { to: "/casos", label: t("nav.cases"), icon: <IconCases /> },
+    { to: "/automacoes", label: t("nav.automations"), icon: <IconAutomation /> },
+    { to: "/relatorio", label: t("nav.report"), icon: <IconReport /> },
   ];
 
   return (
@@ -46,7 +51,7 @@ export default function Layout() {
         </div>
 
         <nav className="nav">
-          <p className="nav-section">Atendimento</p>
+          <p className="nav-section">{t("nav.section")}</p>
           {items.map((item) => (
             <NavLink
               key={item.to}
@@ -65,7 +70,7 @@ export default function Layout() {
           <div className="avatar">BN</div>
           <div className="sidebar-user-info">
             <strong>Beatriz Nunes</strong>
-            <span>Carlcare · Atendimento</span>
+            <span>Carlcare · {t("nav.section")}</span>
           </div>
         </div>
       </aside>
@@ -74,17 +79,36 @@ export default function Layout() {
         <header className="topbar">
           <div className="topbar-search">
             <IconSearch />
-            <input
-              type="search"
-              placeholder="Buscar por cliente, IMEI ou nº do atendimento…"
-              aria-label="Buscar"
-            />
+            <input type="search" placeholder={t("topbar.search")} aria-label={t("topbar.search")} />
           </div>
           <div className="topbar-actions">
             <span className={"api-status " + apiStatus} title={apiLabel}>
               <span className="api-dot" />
               {apiLabel}
             </span>
+
+            <select
+              className="lang-select"
+              value={lang}
+              onChange={(e) => setLang(e.target.value as Lang)}
+              aria-label="Idioma / Language"
+            >
+              {LANGS.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+
+            <button
+              className="icon-btn"
+              onClick={toggleTheme}
+              aria-label={t("topbar.theme")}
+              title={t("topbar.theme")}
+            >
+              {theme === "dark" ? <IconSun /> : <IconMoon />}
+            </button>
+
             <button className="icon-btn" aria-label="Notificações">
               <IconBell />
               {unread > 0 && <span className="icon-btn-dot" />}

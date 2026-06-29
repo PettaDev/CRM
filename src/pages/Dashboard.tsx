@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
+import { useT } from "../settings/SettingsContext";
 import StatusBadge from "../components/StatusBadge";
 import {
   AREAS,
@@ -14,6 +15,7 @@ import type { Area, CaseStatus } from "../types";
 
 export default function Dashboard() {
   const { cases } = useCrm();
+  const { t } = useT();
 
   const stats = useMemo(() => {
     const abertos = cases.filter((c) => isOpen(c.status)).length;
@@ -50,26 +52,26 @@ export default function Dashboard() {
     <div className="stack-lg">
       <div className="page-head">
         <div>
-          <h1>Visão geral</h1>
-          <p className="muted">Atendimentos de assistência técnica · Carlcare Brasil</p>
+          <h1>{t("dash.title")}</h1>
+          <p className="muted">{t("dash.subtitle")}</p>
         </div>
         <Link to="/casos" className="btn btn-primary">
-          Ver todos os casos
+          {t("common.viewAllCases")}
         </Link>
       </div>
 
       <div className="kpi-grid">
-        <KpiCard label="Casos abertos" value={stats.abertos} accent="#0079c1" hint="Em andamento" />
-        <KpiCard label="Aguardando peça" value={stats.aguardando} accent="#f59e0b" hint="Bloqueados por estoque" />
-        <KpiCard label="Prontos p/ retirada" value={stats.prontos} accent="#0ea5a4" hint="Avisar o cliente" />
-        <KpiCard label="Finalizados" value={stats.finalizados} accent="#16a34a" hint="Concluídos" />
+        <KpiCard label={t("dash.open")} value={stats.abertos} accent="#0079c1" hint={t("dash.openHint")} />
+        <KpiCard label={t("dash.awaitingParts")} value={stats.aguardando} accent="#f59e0b" hint={t("dash.awaitingPartsHint")} />
+        <KpiCard label={t("dash.ready")} value={stats.prontos} accent="#0ea5a4" hint={t("dash.readyHint")} />
+        <KpiCard label={t("dash.finished")} value={stats.finalizados} accent="#16a34a" hint={t("dash.finishedHint")} />
       </div>
 
       <div className="grid-2">
         <section className="card">
           <div className="card-head">
-            <h2>Casos por área</h2>
-            <span className="muted">total · abertos</span>
+            <h2>{t("dash.byArea")}</h2>
+            <span className="muted">{t("dash.totalOpen")}</span>
           </div>
           <div className="bar-list">
             {stats.porArea.map((row) => (
@@ -95,8 +97,8 @@ export default function Dashboard() {
 
         <section className="card">
           <div className="card-head">
-            <h2>Casos por status</h2>
-            <span className="muted">distribuição</span>
+            <h2>{t("dash.byStatus")}</h2>
+            <span className="muted">{t("dash.distribution")}</span>
           </div>
           <div className="bar-list">
             {stats.porStatus.map((row) => (
@@ -122,19 +124,19 @@ export default function Dashboard() {
 
       <section className="card">
         <div className="card-head">
-          <h2>Atendimentos recentes</h2>
-          <Link to="/casos" className="link">Ver tudo</Link>
+          <h2>{t("dash.recent")}</h2>
+          <Link to="/casos" className="link">{t("common.seeAll")}</Link>
         </div>
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Atendimento</th>
-                <th>Cliente</th>
-                <th>Aparelho</th>
-                <th>Cidade/UF</th>
-                <th>Status</th>
-                <th>Atualizado</th>
+                <th>{t("th.case")}</th>
+                <th>{t("th.client")}</th>
+                <th>{t("th.device")}</th>
+                <th>{t("th.cityState")}</th>
+                <th>{t("th.status")}</th>
+                <th>{t("th.updated")}</th>
               </tr>
             </thead>
             <tbody>

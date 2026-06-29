@@ -1,9 +1,11 @@
 import type { CaseStatus } from "../types";
 import { STATUS_META } from "../lib/meta";
+import { useT } from "../settings/SettingsContext";
 
-// Pílula colorida para o status do caso. A cor base vem de STATUS_META;
-// o fundo é uma versão suave (alfa) da mesma cor via color-mix.
+// Pílula colorida para o status do caso. A cor vem de STATUS_META; o rótulo é
+// traduzido (i18n) pela chave status.<status>.
 export default function StatusBadge({ status }: { status: CaseStatus }) {
+  const { t } = useT();
   const meta = STATUS_META[status];
   return (
     <span
@@ -15,7 +17,7 @@ export default function StatusBadge({ status }: { status: CaseStatus }) {
       }}
     >
       <span className="badge-dot" style={{ background: meta.color }} />
-      {meta.label}
+      {t(`status.${status}`)}
     </span>
   );
 }
