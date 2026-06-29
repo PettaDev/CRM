@@ -98,8 +98,11 @@ correto de primeira e conformidade com a LGPD (consentimento; IMEI mascarado).
 **Atual:** protótipo funcional com dados de exemplo (frontend + backend + banco),
 com 13 testes automatizados.
 
+Já implementado também: **login com token (JWT)** restrito aos domínios
+@transsion.com / @carlcare.com, **3 idiomas** (PT/EN/ES/中文) e **tema claro/escuro**.
+
 **Próximos passos:**
 1. Integração com a **WhatsApp Business API** (envio real das mensagens).
 2. **Banco de produção** (PostgreSQL/Supabase).
-3. **Login e permissões** por equipe.
+3. **Permissões por equipe** (RBAC) sobre o login já existente.
 4. **Piloto** com 20 a 50 atendimentos reais.
