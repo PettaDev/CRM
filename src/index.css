@@ -1048,6 +1048,7 @@ textarea.input {
   border: 0;
   background: none;
   font: inherit;
+  color: var(--text);
   padding: 12px 14px;
   cursor: pointer;
   border-bottom: 1px solid var(--border);
@@ -1524,6 +1525,78 @@ textarea.input {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── Dropdown de notificações ─────────────────────────────────────────────── */
+
+.notif-wrap {
+  position: relative;
+}
+.dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 31;
+  padding: 6px;
+}
+.notif-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  font-weight: 700;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.notif-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+}
+.notif-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.notif-item:hover {
+  background: var(--surface-2);
+}
+.notif-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.notif-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+.notif-item-top strong {
+  font-size: 13px;
+  color: var(--text);
+}
+.notif-item-msg {
+  display: block;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
 }
 
 /* ── Responsivo ───────────────────────────────────────────────────────────── */
