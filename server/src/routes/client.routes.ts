@@ -1,13 +1,15 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 import { validate } from "../middleware/validate";
 import { clientFormSchema } from "../dto/client.dto";
 import type { ClientController } from "../controllers/client.controller";
 
-export function clientRoutes(controller: ClientController): Router {
+export function clientRoutes(
+  controller: ClientController,
+  requireAuth: RequestHandler
+): Router {
   const router = Router();
-  router.get("/", controller.list);
-  router.get("/:key", controller.getByKey);
-  // O cliente envia o formulário preenchido (associado pela chave de telefone).
-  router.post("/:key/form", validate(clientFormSchema), controller.submitForm);
+  router.get("/", requireAuth, controller.list); // protegido (agente)
+  router.get("/:key", controller.getByKey); // público — página do formulário
+  router.post("/:key/form", validate(clientFormSchema), controller.submitForm); // público
   return router;
 }

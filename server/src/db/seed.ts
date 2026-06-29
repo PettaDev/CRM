@@ -1,5 +1,23 @@
+import bcrypt from "bcryptjs";
 import { getDb } from "./connection";
 import { migrate } from "./migrate";
+
+interface SeedUser {
+  id: string;
+  nome: string;
+  email: string;
+  senha: string;
+  area: string;
+  role: string;
+}
+
+// Usuários de exemplo (login). Só domínios @carlcare.com / @transsion.com.
+const USERS: SeedUser[] = [
+  { id: "u-1", nome: "Beatriz Nunes", email: "bia@carlcare.com", senha: "carlcare123", area: "Carlcare", role: "agente" },
+  { id: "u-2", nome: "Rafael Lima", email: "rafael@carlcare.com", senha: "carlcare123", area: "Carlcare", role: "agente" },
+  { id: "u-3", nome: "Camila Duarte", email: "camila@carlcare.com", senha: "carlcare123", area: "TFAE", role: "agente" },
+  { id: "u-4", nome: "Priscila Rocha", email: "priscila@transsion.com", senha: "transsion123", area: "HQ", role: "gestor" },
+];
 
 // Timestamps relativos para a UI ("há X min/h/d") ficar realista.
 const now = Date.now();
@@ -121,12 +139,27 @@ function seed(): void {
   const insMsg = db.prepare(
     "INSERT INTO messages (id, conversation_id, sender, text, at) VALUES (?, ?, ?, ?, ?)"
   );
+  const insUser = db.prepare(
+    "INSERT INTO users (id, nome, email, senha_hash, area, role, created_at) VALUES (@id, @nome, @email, @senhaHash, @area, @role, @createdAt)"
+  );
 
   const run = db.transaction(() => {
     // Limpa (ordem respeita as FOREIGN KEYs: filhos antes dos pais).
     db.exec(
-      "DELETE FROM messages; DELETE FROM conversations; DELETE FROM case_status_events; DELETE FROM client_forms; DELETE FROM clients; DELETE FROM cases;"
+      "DELETE FROM messages; DELETE FROM conversations; DELETE FROM case_status_events; DELETE FROM client_forms; DELETE FROM clients; DELETE FROM cases; DELETE FROM users;"
     );
+
+    for (const u of USERS) {
+      insUser.run({
+        id: u.id,
+        nome: u.nome,
+        email: u.email,
+        senhaHash: bcrypt.hashSync(u.senha, 10),
+        area: u.area,
+        role: u.role,
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     for (const c of CASES) {
       insCase.run({ ...c, canal: "WhatsApp" });
@@ -178,7 +211,7 @@ function seed(): void {
 
   run();
   console.log(
-    `✓ Seed concluído: ${CASES.length} casos, ${CLIENTS.length} clientes, ${CONVERSATIONS.length} conversas.`
+    `✓ Seed concluído: ${USERS.length} usuários, ${CASES.length} casos, ${CLIENTS.length} clientes, ${CONVERSATIONS.length} conversas.`
   );
 }
 

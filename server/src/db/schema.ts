@@ -13,6 +13,16 @@
 export const SCHEMA_SQL = /* sql */ `
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS users (
+  id         TEXT PRIMARY KEY,
+  nome       TEXT NOT NULL,
+  email      TEXT NOT NULL UNIQUE,
+  senha_hash TEXT NOT NULL,
+  area       TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE','Comercial','HQ')),
+  role       TEXT NOT NULL DEFAULT 'agente' CHECK (role IN ('agente','gestor')),
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS clients (
   telefone_key   TEXT PRIMARY KEY,
   telefone       TEXT NOT NULL,

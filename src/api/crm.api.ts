@@ -65,6 +65,8 @@ export const crmApi = {
     ),
 
   listClients: () => http.get<Client[]>("/clients"),
+  getClient: (telefoneKey: string) =>
+    http.get<Client>(`/clients/${telefoneKey}`), // público (página do formulário)
   submitForm: (telefoneKey: string, form: ClientForm) =>
     http.post<Client>(`/clients/${telefoneKey}/form`, form),
 
