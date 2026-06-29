@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import Logo from "./Logo";
 import {
   IconAutomation,
@@ -16,6 +17,7 @@ import { useCrm } from "../context/CrmContext";
 import { useAuth } from "../auth/AuthContext";
 import { useT } from "../settings/SettingsContext";
 import { LANGS, type Lang } from "../i18n/dictionaries";
+import { timeAgo } from "../lib/meta";
 import type { ReactNode } from "react";
 
 interface NavItem {
@@ -37,6 +39,11 @@ export default function Layout() {
     .map((p) => p[0] ?? "")
     .join("")
     .toUpperCase();
+
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifs = [...conversations]
+    .filter((c) => c.unread > 0)
+    .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 
   const apiLabel =
     apiStatus === "online"
@@ -122,10 +129,57 @@ export default function Layout() {
               {theme === "dark" ? <IconSun /> : <IconMoon />}
             </button>
 
-            <button className="icon-btn" aria-label="Notificações">
-              <IconBell />
-              {unread > 0 && <span className="icon-btn-dot" />}
-            </button>
+            <div className="notif-wrap">
+              <button
+                className="icon-btn"
+                aria-label={t("notif.title")}
+                onClick={() => setNotifOpen((o) => !o)}
+              >
+                <IconBell />
+                {unread > 0 && <span className="icon-btn-dot" />}
+              </button>
+              {notifOpen && (
+                <>
+                  <div className="dropdown-overlay" onClick={() => setNotifOpen(false)} />
+                  <div className="notif-panel">
+                    <div className="notif-head">
+                      {t("notif.title")}
+                      {unread > 0 && <span className="chip">{unread}</span>}
+                    </div>
+                    {notifs.length === 0 ? (
+                      <p className="notif-empty muted">{t("notif.empty")}</p>
+                    ) : (
+                      notifs.map((cv) => {
+                        const last = cv.messages[cv.messages.length - 1];
+                        const ini = cv.cliente
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((p) => p[0] ?? "")
+                          .join("");
+                        return (
+                          <Link
+                            key={cv.id}
+                            to="/inbox"
+                            className="notif-item"
+                            onClick={() => setNotifOpen(false)}
+                          >
+                            <div className="avatar avatar-sm">{ini}</div>
+                            <div className="notif-item-body">
+                              <div className="notif-item-top">
+                                <strong>{cv.cliente}</strong>
+                                <span className="muted small">{timeAgo(cv.lastAt)}</span>
+                              </div>
+                              <span className="notif-item-msg muted">{last?.text}</span>
+                            </div>
+                            <span className="unread">{cv.unread}</span>
+                          </Link>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
             <div className="avatar avatar-sm">{initials}</div>
           </div>
         </header>
