@@ -105,8 +105,11 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     conversationsRef.current = conversations;
   }, [cases, conversations]);
 
-  // Hidratação inicial: se o backend responder, substitui o mock; senão,
-  // mantém o mock (fallback / degradação graciosa).
+  // Hidratação inicial: se o backend responder, ele é a FONTE DE VERDADE —
+  // substitui o mock mesmo com listas vazias (banco zerado = telas vazias).
+  // O mock só permanece quando a API está fora do ar (degradação graciosa);
+  // caso contrário, ações sobre entidades-fantasma falhariam ao persistir
+  // (ex.: link de formulário "inválido" para um cliente que só existe no mock).
   useEffect(() => {
     let cancelled = false;
     Promise.all([
@@ -116,9 +119,9 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     ])
       .then(([cs, cv, cl]) => {
         if (cancelled) return;
-        if (cs.length) setCases(cs);
-        if (cv.length) setConversations(cv);
-        if (cl.length) setClients(cl);
+        setCases(cs);
+        setConversations(cv);
+        setClients(cl);
         setApiStatus("online");
       })
       .catch(() => {
