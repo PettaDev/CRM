@@ -1,15 +1,19 @@
 import express, { type Express, type RequestHandler } from "express";
+import path from "node:path";
+import fs from "node:fs";
 import cors from "cors";
 import { config } from "./config/env";
 import { requestLogger } from "./middleware/request-logger";
 import { errorHandler } from "./middleware/error-handler";
 import { buildRoutes, type Controllers } from "./routes";
+import type { ConversationService } from "./services/conversation.service";
 
 // Fábrica do app Express. Recebe os controllers e o middleware de autenticação
 // por parâmetro (inversão de controle) — facilita testar e trocar implementações.
 export function createApp(
   controllers: Controllers,
-  requireAuth: RequestHandler
+  requireAuth: RequestHandler,
+  conversationService: ConversationService
 ): Express {
   const app = express();
 
@@ -21,7 +25,22 @@ export function createApp(
     res.json({ status: "ok", ts: new Date().toISOString() });
   });
 
-  app.use("/api", buildRoutes(controllers, requireAuth));
+  app.use("/api", buildRoutes(controllers, requireAuth, conversationService));
+
+  // Produção: o mesmo processo serve o build do frontend (single service —
+  // sem CORS entre front e API). STATIC_DIR aponta para o dist/ do Vite.
+  if (config.staticDir && fs.existsSync(config.staticDir)) {
+    const index = path.join(config.staticDir, "index.html");
+    app.use(express.static(config.staticDir));
+    // Fallback SPA: qualquer GET fora de /api devolve o index.html.
+    app.use((req, res, next) => {
+      if (req.method === "GET" && !req.path.startsWith("/api")) {
+        res.sendFile(index);
+      } else {
+        next();
+      }
+    });
+  }
 
   // Tem que ser o ÚLTIMO middleware.
   app.use(errorHandler);

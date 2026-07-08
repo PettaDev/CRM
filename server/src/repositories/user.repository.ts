@@ -17,10 +17,36 @@ export interface UserRecord extends User {
 
 export interface UserRepository {
   findByEmail(email: string): UserRecord | null;
+  count(): number;
+  create(user: UserRecord): void;
 }
 
 export class SqliteUserRepository implements UserRepository {
   constructor(private readonly db: Database.Database) {}
+
+  count(): number {
+    const row = this.db
+      .prepare("SELECT COUNT(*) AS n FROM users")
+      .get() as { n: number };
+    return row.n;
+  }
+
+  create(user: UserRecord): void {
+    this.db
+      .prepare(
+        `INSERT INTO users (id, nome, email, senha_hash, area, role, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        user.id,
+        user.nome,
+        user.email.toLowerCase(),
+        user.senhaHash,
+        user.area,
+        user.role,
+        new Date().toISOString()
+      );
+  }
 
   findByEmail(email: string): UserRecord | null {
     const row = this.db

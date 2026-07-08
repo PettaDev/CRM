@@ -1,5 +1,7 @@
 import { Router, type RequestHandler } from "express";
 import { authRoutes } from "./auth.routes";
+import { webhookRoutes } from "./webhook.routes";
+import type { ConversationService } from "../services/conversation.service";
 import { caseRoutes } from "./case.routes";
 import { clientRoutes } from "./client.routes";
 import { conversationRoutes } from "./conversation.routes";
@@ -21,11 +23,18 @@ export interface Controllers {
   templates: TemplateController;
 }
 
-export function buildRoutes(c: Controllers, requireAuth: RequestHandler): Router {
+export function buildRoutes(
+  c: Controllers,
+  requireAuth: RequestHandler,
+  conversationService: ConversationService
+): Router {
   const router = Router();
 
   // Público: login (e /auth/me é protegido lá dentro).
   router.use("/auth", authRoutes(c.auth, requireAuth));
+
+  // Público: webhook da WhatsApp Cloud API (quem chama é a Meta).
+  router.use("/webhook", webhookRoutes(conversationService));
 
   // Protegido — exige agente autenticado.
   router.use("/cases", requireAuth, caseRoutes(c.cases));

@@ -12,6 +12,7 @@ import type {
 import { NotFoundError, ConflictError } from "../domain/errors";
 import { phoneKey } from "../utils/phone";
 import { UNIT_ADDRESS } from "../domain/constants";
+import type { WhatsAppSender } from "./whatsapp.service";
 
 // Serviço da caixa de entrada. Coordena conversa + cliente + caso + templates
 // (caso de uso de mensageria). Dependências injetadas por construtor.
@@ -21,7 +22,10 @@ export class ConversationService {
     private readonly clients: ClientRepository,
     private readonly cases: CaseRepository,
     private readonly templates: TemplateService,
-    private readonly frontendBaseUrl: string
+    private readonly frontendBaseUrl: string,
+    // Opcional: quando configurado (docs/WHATSAPP.md), toda mensagem do agente
+    // sai também pelo WhatsApp real. Sem ele, o envio é apenas registrado no banco.
+    private readonly whatsapp?: WhatsAppSender
   ) {}
 
   list(): Conversation[] {
@@ -35,9 +39,36 @@ export class ConversationService {
   }
 
   addMessage(id: string, dto: AddMessageDto): Conversation {
-    this.getById(id);
+    const conv = this.getById(id);
     this.conversations.addMessage(id, this.newMessage(dto.from, dto.text));
+    if (dto.from === "agente") this.deliver(conv.telefone, dto.text);
     return this.getById(id);
+  }
+
+  // Mensagem recebida pelo WEBHOOK do WhatsApp. Se já existe conversa para o
+  // telefone, anexa (e marca como não lida); senão, abre uma conversa nova.
+  receiveInbound(phone: string, name: string, text: string): Conversation {
+    const key = phoneKey(phone);
+    const existing = this.conversations.findByPhoneKey(key);
+    const msg = this.newMessage("cliente", text);
+
+    if (existing) {
+      this.conversations.addInboundMessage(existing.id, msg);
+      return this.getById(existing.id);
+    }
+
+    const conv: Conversation = {
+      id: `cv-${Date.now()}`,
+      caseId: null,
+      cliente: name,
+      telefone: `+${key}`,
+      unread: 0, // o INSERT registra 0; a mensagem abaixo incrementa para 1
+      lastAt: msg.at,
+      messages: [],
+    };
+    this.conversations.create(conv);
+    this.conversations.addInboundMessage(conv.id, msg);
+    return this.getById(conv.id);
   }
 
   markRead(id: string): Conversation {
@@ -57,6 +88,7 @@ export class ConversationService {
       `Olá, ${conv.cliente.split(" ")[0]}! 👋 Aqui é a Carlcare. ` +
       `Para agilizar seu atendimento, preencha seu cadastro: ${link}`;
     this.conversations.addMessage(id, this.newMessage("agente", text));
+    this.deliver(conv.telefone, text);
 
     const client = this.clients.findByKey(key);
     if (!client) throw new NotFoundError("Cliente", key);
@@ -79,10 +111,20 @@ export class ConversationService {
     const client = this.clients.findByKey(phoneKey(conv.telefone)) ?? undefined;
     const text = this.templates.render(templateId, this.buildVars(caso, client));
     this.conversations.addMessage(id, this.newMessage("agente", text));
+    this.deliver(conv.telefone, text);
     return this.getById(id);
   }
 
   // ── helpers ──
+
+  // Entrega best-effort pelo WhatsApp real: a mensagem já está registrada no
+  // banco (fonte de verdade); falha de rede não pode quebrar o fluxo do agente.
+  private deliver(phone: string, text: string): void {
+    void this.whatsapp?.sendText(phone, text).catch((err) => {
+      console.error("[whatsapp] falha na entrega:", err);
+    });
+  }
+
   private newMessage(from: "cliente" | "agente", text: string): ChatMessage {
     return { id: `m-${Date.now()}`, from, text, at: new Date().toISOString() };
   }

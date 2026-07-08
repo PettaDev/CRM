@@ -11,7 +11,12 @@
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
     "db:reset": "tsx src/db/migrate.ts && tsx src/db/seed.ts",
+    "db:clear": "tsx src/db/clear.ts",
+    "user:add": "tsx src/scripts/create-user.ts",
     "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=20.19"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

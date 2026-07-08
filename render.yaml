@@ -1,0 +1,31 @@
+# Blueprint do Render (https://render.com/docs/blueprint-spec).
+# Um único Web Service: o Express serve a API (/api) e o build do frontend.
+# Deploy: Render Dashboard → New → Blueprint → conectar o repo PettaDev/CRM.
+services:
+  - type: web
+    name: carlcare-crm
+    runtime: node
+    plan: free
+    # 1) build do frontend com assets na raiz e API relativa (/api — mesma origem)
+    # 2) build do backend (tsc → server/dist)
+    buildCommand: npm ci && VITE_BASE=/ VITE_API_URL=/api npm run build && cd server && npm ci && npm run build
+    startCommand: cd server && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: JWT_SECRET
+        generateValue: true # segredo forte gerado pelo Render
+      - key: STATIC_DIR
+        value: ../dist # Express serve o frontend buildado
+      - key: ADMIN_EMAIL
+        value: admin@carlcare.com
+      - key: ADMIN_PASSWORD
+        sync: false # defina no dashboard (não fica no repo)
+      # WhatsApp Cloud API — preencha no dashboard quando configurar (docs/WHATSAPP.md)
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        generateValue: true
