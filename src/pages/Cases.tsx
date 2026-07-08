@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCrm } from "../context/CrmContext";
+import { useCrmActions, useCrmState } from "../context/CrmContext";
 import type { NewCaseInput } from "../context/CrmContext";
 import { useT } from "../settings/SettingsContext";
 import StatusBadge from "../components/StatusBadge";
@@ -19,7 +19,7 @@ import type { Area, CaseStatus } from "../types";
 type View = "tabela" | "kanban";
 
 export default function Cases() {
-  const { cases } = useCrm();
+  const { cases } = useCrmState();
   const { t } = useT();
   const [view, setView] = useState<View>("tabela");
   const [status, setStatus] = useState<CaseStatus | "todos">("todos");
@@ -215,7 +215,7 @@ const EMPTY: NewCaseInput = {
 };
 
 function NewCaseModal({ onClose }: { onClose: () => void }) {
-  const { addCase } = useCrm();
+  const { addCase } = useCrmActions();
   const navigate = useNavigate();
   const [form, setForm] = useState<NewCaseInput>(EMPTY);
 

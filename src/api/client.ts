@@ -51,3 +51,10 @@ export const http = {
 };
 
 export const API_BASE = BASE;
+
+// Persistência "best-effort": dispara a chamada e ignora a falha — a UI já foi
+// atualizada de forma otimista e o estado local é a fonte de verdade. Centraliza
+// o padrão `void crmApi.x(...).catch(() => {})` repetido nas mutações.
+export function persist(p: Promise<unknown>): void {
+  void p.catch(() => {});
+}

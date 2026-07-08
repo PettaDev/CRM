@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -18,7 +19,9 @@ import type {
 } from "../types";
 import { CASES, CLIENTS, CONVERSATIONS } from "../data/mock";
 import { phoneKey, templateFormulario } from "../lib/meta";
+import { patchById, upsertByKey } from "../lib/collections";
 import { crmApi } from "../api/crm.api";
+import { persist } from "../api/client";
 import type { GarantiaInput, ShipmentInput } from "../api/crm.api";
 
 // Dados para abrir um novo caso a partir do formulário.
@@ -38,11 +41,16 @@ export interface NewCaseInput {
 // Estado da conexão com a API (mostra um indicador na barra superior).
 export type ApiStatus = "checking" | "online" | "offline";
 
-interface CrmContextValue {
+// Estado (dados) do CRM. Muda quando os dados mudam.
+export interface CrmState {
   cases: ServiceCase[];
   conversations: Conversation[];
   clients: Client[];
   apiStatus: ApiStatus;
+}
+
+// Ações (mutações) do CRM. Identidade estável — não depende dos dados.
+export interface CrmActions {
   updateCaseStatus: (
     caseId: string,
     status: CaseStatus,
@@ -59,7 +67,15 @@ interface CrmContextValue {
   sendTemplate: (conversationId: string, templateId: string) => void;
 }
 
-const CrmContext = createContext<CrmContextValue | null>(null);
+// Forma pública (fachada): estado + ações combinados. Mantida idêntica para não
+// quebrar consumidores — `useCrm()` continua retornando este objeto plano.
+export type CrmContextValue = CrmState & CrmActions;
+
+// Fase 2: dois contextos. Consumidores que só usam ações assinam apenas
+// CrmActionsContext (identidade estável) e NÃO re-renderizam quando os dados
+// mudam. Quem usa dados assina CrmStateContext.
+const CrmStateContext = createContext<CrmState | null>(null);
+const CrmActionsContext = createContext<CrmActions | null>(null);
 
 function nextCaseId(cases: ServiceCase[]): string {
   const year = new Date().getFullYear();
@@ -78,6 +94,16 @@ export function CrmProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>(CONVERSATIONS);
   const [clients, setClients] = useState<Client[]>(CLIENTS);
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
+
+  // Refs espelham o estado mais recente para callbacks que apenas CONSULTAM o
+  // estado (não dependem dele para renderizar). Assim esses callbacks mantêm
+  // identidade estável (deps []), pré-requisito para memoizar as ações depois.
+  const casesRef = useRef(cases);
+  const conversationsRef = useRef(conversations);
+  useEffect(() => {
+    casesRef.current = cases;
+    conversationsRef.current = conversations;
+  }, [cases, conversations]);
 
   // Hidratação inicial: se o backend responder, substitui o mock; senão,
   // mantém o mock (fallback / degradação graciosa).
@@ -103,182 +129,94 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // ─── Casos ─────────────────────────────────────────────────────────────
+  const addCase = useCallback((input: NewCaseInput): string => {
+    const now = new Date().toISOString();
+    const id = nextCaseId(casesRef.current);
+    const novo: ServiceCase = {
+      id,
+      ...input,
+      status: "novo",
+      canal: "WhatsApp",
+      createdAt: now,
+      updatedAt: now,
+      historico: [{ status: "novo", at: now, by: input.responsavel }],
+    };
+    setCases((prev) => [novo, ...prev]);
+    persist(crmApi.createCase({ ...input, id }));
+    return id;
+  }, []);
+
   const updateCaseStatus = useCallback(
     (caseId: string, status: CaseStatus, by: string, note?: string) => {
       const now = new Date().toISOString();
       setCases((prev) =>
-        prev.map((c) =>
-          c.id === caseId
-            ? {
-                ...c,
-                status,
-                updatedAt: now,
-                historico: [...c.historico, { status, at: now, by, note }],
-              }
-            : c
-        )
+        patchById(prev, caseId, (c) => ({
+          status,
+          updatedAt: now,
+          historico: [...c.historico, { status, at: now, by, note }],
+        }))
       );
-      void crmApi.updateCaseStatus(caseId, status, by, note).catch(() => {});
+      persist(crmApi.updateCaseStatus(caseId, status, by, note));
     },
     []
   );
 
-  const addCase = useCallback(
-    (input: NewCaseInput): string => {
-      const now = new Date().toISOString();
-      const id = nextCaseId(cases);
-      const novo: ServiceCase = {
-        id,
-        ...input,
-        status: "novo",
-        canal: "WhatsApp",
-        createdAt: now,
-        updatedAt: now,
-        historico: [{ status: "novo", at: now, by: input.responsavel }],
-      };
-      setCases((prev) => [novo, ...prev]);
-      void crmApi.createCase({ ...input, id }).catch(() => {});
-      return id;
-    },
-    [cases]
-  );
-
-  const sendMessage = useCallback((conversationId: string, text: string) => {
-    const now = new Date().toISOString();
-    setConversations((prev) =>
-      prev.map((cv) =>
-        cv.id === conversationId
-          ? {
-              ...cv,
-              lastAt: now,
-              unread: 0,
-              messages: [
-                ...cv.messages,
-                { id: `m-${Date.now()}`, from: "agente", text, at: now },
-              ],
-            }
-          : cv
-      )
-    );
-    void crmApi.addMessage(conversationId, text).catch(() => {});
-  }, []);
-
-  const markRead = useCallback((conversationId: string) => {
-    setConversations((prev) =>
-      prev.map((cv) => (cv.id === conversationId ? { ...cv, unread: 0 } : cv))
-    );
-    void crmApi.markRead(conversationId).catch(() => {});
-  }, []);
-
-  const sendForm = useCallback(
-    (conversationId: string) => {
-      const cv = conversations.find((c) => c.id === conversationId);
-      if (!cv) return;
-      const key = phoneKey(cv.telefone);
-      const now = new Date().toISOString();
-
-      setClients((prev) => {
-        if (prev.some((c) => c.telefoneKey === key)) {
-          return prev.map((c) =>
-            c.telefoneKey === key && c.formStatus !== "preenchido"
-              ? { ...c, formStatus: "enviado", enviadoAt: now }
-              : c
-          );
-        }
-        return [
-          ...prev,
-          { telefone: cv.telefone, telefoneKey: key, formStatus: "enviado", enviadoAt: now },
-        ];
-      });
-
-      const link = `${window.location.origin}${window.location.pathname}#/form/${key}`;
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === conversationId
-            ? {
-                ...c,
-                lastAt: now,
-                unread: 0,
-                messages: [
-                  ...c.messages,
-                  {
-                    id: `m-${Date.now()}`,
-                    from: "agente",
-                    text: templateFormulario(cv.cliente, link),
-                    at: now,
-                  },
-                ],
-              }
-            : c
-        )
-      );
-      void crmApi.sendForm(conversationId).catch(() => {});
-    },
-    [conversations]
-  );
-
-  const submitForm = useCallback((telefoneKey: string, form: ClientForm) => {
-    const now = new Date().toISOString();
-    setClients((prev) => {
-      if (prev.some((c) => c.telefoneKey === telefoneKey)) {
-        return prev.map((c) =>
-          c.telefoneKey === telefoneKey
-            ? { ...c, formStatus: "preenchido", preenchidoAt: now, form }
-            : c
-        );
-      }
-      return [
-        ...prev,
-        { telefone: telefoneKey, telefoneKey, formStatus: "preenchido", preenchidoAt: now, form },
-      ];
-    });
-    void crmApi.submitForm(telefoneKey, form).catch(() => {});
-  }, []);
-
   const updateGarantia = useCallback((caseId: string, g: GarantiaInput) => {
     const now = new Date().toISOString();
     setCases((prev) =>
-      prev.map((c) =>
-        c.id === caseId
-          ? {
-              ...c,
-              garantiaQueda: g.queda,
-              garantiaAgua: g.agua,
-              garantiaAberto: g.aberto,
-              aparelhoLiga: g.aparelhoLiga,
-              foraGarantia: g.queda || g.agua || g.aberto,
-              updatedAt: now,
-            }
-          : c
-      )
+      patchById(prev, caseId, {
+        garantiaQueda: g.queda,
+        garantiaAgua: g.agua,
+        garantiaAberto: g.aberto,
+        aparelhoLiga: g.aparelhoLiga,
+        foraGarantia: g.queda || g.agua || g.aberto,
+        updatedAt: now,
+      })
     );
-    void crmApi.updateGarantia(caseId, g).catch(() => {});
+    persist(crmApi.updateGarantia(caseId, g));
   }, []);
 
   const addShipment = useCallback((caseId: string, s: ShipmentInput) => {
     const now = new Date().toISOString();
     setCases((prev) =>
-      prev.map((c) =>
-        c.id === caseId
-          ? {
-              ...c,
-              shipments: [
-                ...(c.shipments ?? []),
-                {
-                  id: Date.now(),
-                  direcao: s.direcao,
-                  codigoRastreio: s.codigoRastreio ?? null,
-                  enviadoEm: s.enviadoEm ?? null,
-                  transportadora: s.transportadora ?? "Correios",
-                  criadoEm: now,
-                },
-              ],
-              updatedAt: now,
-            }
-          : c
-      )
+      patchById(prev, caseId, (c) => ({
+        shipments: [
+          ...(c.shipments ?? []),
+          {
+            id: Date.now(),
+            direcao: s.direcao,
+            codigoRastreio: s.codigoRastreio ?? null,
+            enviadoEm: s.enviadoEm ?? null,
+            transportadora: s.transportadora ?? "Correios",
+            criadoEm: now,
+          },
+        ],
+        updatedAt: now,
+      }))
     );
-    void crmApi.addShipment(caseId, s).catch(() => {});
+    persist(crmApi.addShipment(caseId, s));
+  }, []);
+
+  // ─── Conversas ─────────────────────────────────────────────────────────
+  const sendMessage = useCallback((conversationId: string, text: string) => {
+    const now = new Date().toISOString();
+    setConversations((prev) =>
+      patchById(prev, conversationId, (cv) => ({
+        lastAt: now,
+        unread: 0,
+        messages: [
+          ...cv.messages,
+          { id: `m-${Date.now()}`, from: "agente", text, at: now },
+        ],
+      }))
+    );
+    persist(crmApi.addMessage(conversationId, text));
+  }, []);
+
+  const markRead = useCallback((conversationId: string) => {
+    setConversations((prev) => patchById(prev, conversationId, { unread: 0 }));
+    persist(crmApi.markRead(conversationId));
   }, []);
 
   // Templates são renderizados no servidor; atualizamos a conversa pela resposta.
@@ -287,54 +225,140 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       void crmApi
         .sendTemplate(conversationId, templateId)
         .then((updated) =>
-          setConversations((prev) =>
-            prev.map((c) => (c.id === updated.id ? updated : c))
-          )
+          setConversations((prev) => patchById(prev, updated.id, updated))
         )
         .catch(() => {});
     },
     []
   );
 
-  const value = useMemo<CrmContextValue>(
+  // ─── Clientes ──────────────────────────────────────────────────────────
+  const submitForm = useCallback((telefoneKey: string, form: ClientForm) => {
+    const now = new Date().toISOString();
+    setClients((prev) =>
+      upsertByKey(
+        prev,
+        (c) => c.telefoneKey,
+        telefoneKey,
+        (c) => ({ ...c, formStatus: "preenchido", preenchidoAt: now, form }),
+        () => ({
+          telefone: telefoneKey,
+          telefoneKey,
+          formStatus: "preenchido",
+          preenchidoAt: now,
+          form,
+        })
+      )
+    );
+    persist(crmApi.submitForm(telefoneKey, form));
+  }, []);
+
+  // ─── Cross-domain (conversa + cliente) ───────────────────────────────────
+  // Envia o link do formulário: marca/cria o cliente E anexa a mensagem na
+  // conversa. Única mutação que toca dois agregados — atenção no split (TD-01).
+  const sendForm = useCallback((conversationId: string) => {
+    const cv = conversationsRef.current.find((c) => c.id === conversationId);
+    if (!cv) return;
+    const key = phoneKey(cv.telefone);
+    const now = new Date().toISOString();
+
+    setClients((prev) =>
+      upsertByKey(
+        prev,
+        (c) => c.telefoneKey,
+        key,
+        (c) =>
+          c.formStatus !== "preenchido"
+            ? { ...c, formStatus: "enviado", enviadoAt: now }
+            : c,
+        () => ({ telefone: cv.telefone, telefoneKey: key, formStatus: "enviado", enviadoAt: now })
+      )
+    );
+
+    const link = `${window.location.origin}${window.location.pathname}#/form/${key}`;
+    setConversations((prev) =>
+      patchById(prev, conversationId, (c) => ({
+        lastAt: now,
+        unread: 0,
+        messages: [
+          ...c.messages,
+          {
+            id: `m-${Date.now()}`,
+            from: "agente",
+            text: templateFormulario(cv.cliente, link),
+            at: now,
+          },
+        ],
+      }))
+    );
+    persist(crmApi.sendForm(conversationId));
+  }, []);
+
+  // Grupo de ESTADO: nova identidade só quando os dados mudam.
+  const state = useMemo<CrmState>(
+    () => ({ cases, conversations, clients, apiStatus }),
+    [cases, conversations, clients, apiStatus]
+  );
+
+  // Grupo de AÇÕES: identidade estável (todas as ações têm deps []), então este
+  // objeto nunca muda de referência após a montagem. Base para a Fase 2.
+  const actions = useMemo<CrmActions>(
     () => ({
-      cases,
-      conversations,
-      clients,
-      apiStatus,
       updateCaseStatus,
       addCase,
-      sendMessage,
-      markRead,
-      sendForm,
-      submitForm,
       updateGarantia,
       addShipment,
+      sendMessage,
+      markRead,
       sendTemplate,
+      submitForm,
+      sendForm,
     }),
     [
-      cases,
-      conversations,
-      clients,
-      apiStatus,
       updateCaseStatus,
       addCase,
-      sendMessage,
-      markRead,
-      sendForm,
-      submitForm,
       updateGarantia,
       addShipment,
+      sendMessage,
+      markRead,
       sendTemplate,
+      submitForm,
+      sendForm,
     ]
   );
 
-  return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;
+  // Estado por dentro, ações por fora: a ordem é indiferente (independentes).
+  return (
+    <CrmStateContext.Provider value={state}>
+      <CrmActionsContext.Provider value={actions}>
+        {children}
+      </CrmActionsContext.Provider>
+    </CrmStateContext.Provider>
+  );
 }
 
+// Apenas dados — re-renderiza quando os dados mudam.
+// eslint-disable-next-line react-refresh/only-export-components
+export function useCrmState(): CrmState {
+  const ctx = useContext(CrmStateContext);
+  if (!ctx) throw new Error("useCrmState deve ser usado dentro de <CrmProvider>");
+  return ctx;
+}
+
+// Apenas ações — identidade estável, nunca re-renderiza por mudança de dados.
+// eslint-disable-next-line react-refresh/only-export-components
+export function useCrmActions(): CrmActions {
+  const ctx = useContext(CrmActionsContext);
+  if (!ctx) throw new Error("useCrmActions deve ser usado dentro de <CrmProvider>");
+  return ctx;
+}
+
+// Fachada retrocompatível: recombina estado + ações no mesmo objeto plano que os
+// consumidores existentes esperam. Assina os dois contextos (re-renderiza com os
+// dados, como antes). Prefira useCrmState/useCrmActions em código novo.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useCrm(): CrmContextValue {
-  const ctx = useContext(CrmContext);
-  if (!ctx) throw new Error("useCrm deve ser usado dentro de <CrmProvider>");
-  return ctx;
+  const state = useCrmState();
+  const actions = useCrmActions();
+  return useMemo(() => ({ ...state, ...actions }), [state, actions]);
 }

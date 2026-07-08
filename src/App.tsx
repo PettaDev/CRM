@@ -7,7 +7,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Inbox from "./pages/Inbox";
 import Cases from "./pages/Cases";
-import CaseDetail from "./pages/CaseDetail";
+import CaseDetail from "./components/case-detail/CaseDetail";
 import Automations from "./pages/Automations";
 import Reports from "./pages/Reports";
 import ClientForm from "./pages/ClientForm";
