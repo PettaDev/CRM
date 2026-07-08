@@ -1,6 +1,7 @@
 import { config } from "./config/env";
 import { getDb } from "./db/connection";
 import { migrate } from "./db/migrate";
+import { seedDemo } from "./db/seed";
 import { SqliteCaseRepository } from "./repositories/case.repository";
 import { SqliteClientRepository } from "./repositories/client.repository";
 import { SqliteConversationRepository } from "./repositories/conversation.repository";
@@ -38,9 +39,21 @@ const shipmentRepo = new SqliteShipmentRepository(db);
 const statsRepo = new SqliteStatsRepository(db);
 const userRepo = new SqliteUserRepository(db);
 
-// Banco recém-criado (produção/db zerado): garante um admin para o primeiro
-// login. Credenciais vêm de ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME.
-if (userRepo.count() === 0) {
+// SEED_DEMO=1 (apresentação): popula os dados de demonstração no boot, mas SÓ
+// se o banco estiver vazio — nunca sobrescreve dados reais já cadastrados.
+// Útil no Render free, onde o disco é efêmero e o banco renasce a cada deploy.
+if (config.seedDemo) {
+  if (caseRepo.findAll().length === 0) {
+    seedDemo();
+    console.log("✓ SEED_DEMO=1 — dados de demonstração carregados.");
+  } else {
+    console.log("• SEED_DEMO=1 ignorado: o banco já tem dados.");
+  }
+}
+
+// Garante o usuário admin (ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME) — tanto
+// no banco recém-criado quanto após o seed de demonstração.
+if (!userRepo.findByEmail(config.adminEmail)) {
   userRepo.create({
     id: "u-admin",
     nome: config.adminName,
@@ -49,7 +62,7 @@ if (userRepo.count() === 0) {
     role: "gestor",
     senhaHash: bcrypt.hashSync(config.adminPassword, 10),
   });
-  console.log(`✓ Admin inicial criado: ${config.adminEmail}`);
+  console.log(`✓ Admin criado: ${config.adminEmail}`);
   if (!process.env.ADMIN_PASSWORD) {
     console.warn("⚠ ADMIN_PASSWORD não definido — usando a senha padrão. Troque em produção!");
   }

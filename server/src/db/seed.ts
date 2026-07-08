@@ -115,7 +115,8 @@ const CONVERSATIONS: SeedConv[] = [
   ] },
 ];
 
-function seed(): void {
+// Exportado para o boot do servidor (SEED_DEMO=1) além do script `npm run seed`.
+export function seedDemo(): void {
   migrate();
   const db = getDb();
 
@@ -215,4 +216,6 @@ function seed(): void {
   );
 }
 
-seed();
+// Auto-executa só quando chamado como script (npm run seed / db:reset) —
+// importar este módulo (ex.: pelo index.ts) NÃO dispara o seed.
+if (require.main === module) seedDemo();

@@ -22,6 +22,9 @@ services:
         value: admin@carlcare.com
       - key: ADMIN_PASSWORD
         sync: false # defina no dashboard (não fica no repo)
+      - key: SEED_DEMO
+        value: "1" # dados de demonstração no boot (banco vazio). "0" = produção real
+
       # WhatsApp Cloud API — preencha no dashboard quando configurar (docs/WHATSAPP.md)
       - key: WHATSAPP_TOKEN
         sync: false

@@ -21,6 +21,8 @@ export interface AppConfig {
   adminEmail: string;
   adminPassword: string;
   adminName: string;
+  /** SEED_DEMO=1: popula dados de demonstração no boot SE o banco estiver vazio. */
+  seedDemo: boolean;
   /** WhatsApp Cloud API (Meta). Vazios = integração desligada (modo simulado). */
   whatsappToken: string;
   whatsappPhoneId: string;
@@ -48,6 +50,7 @@ export const config: AppConfig = {
   adminEmail: process.env.ADMIN_EMAIL ?? "admin@carlcare.com",
   adminPassword: process.env.ADMIN_PASSWORD ?? "carlcare123",
   adminName: process.env.ADMIN_NAME ?? "Administrador",
+  seedDemo: process.env.SEED_DEMO === "1",
   whatsappToken: process.env.WHATSAPP_TOKEN ?? "",
   whatsappPhoneId: process.env.WHATSAPP_PHONE_ID ?? "",
   whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? "carlcare-verify",
