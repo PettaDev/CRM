@@ -8,6 +8,7 @@ interface UserRow {
   senha_hash: string;
   area: string;
   role: string;
+  pais: string;
 }
 
 // Inclui o hash da senha — só circula dentro da camada de auth, nunca na API.
@@ -34,8 +35,8 @@ export class SqliteUserRepository implements UserRepository {
   create(user: UserRecord): void {
     this.db
       .prepare(
-        `INSERT INTO users (id, nome, email, senha_hash, area, role, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO users (id, nome, email, senha_hash, area, role, pais, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         user.id,
@@ -44,6 +45,7 @@ export class SqliteUserRepository implements UserRepository {
         user.senhaHash,
         user.area,
         user.role,
+        user.pais ?? "BR",
         new Date().toISOString()
       );
   }
@@ -59,6 +61,7 @@ export class SqliteUserRepository implements UserRepository {
       email: row.email,
       area: row.area as Area,
       role: row.role as Role,
+      pais: row.pais,
       senhaHash: row.senha_hash,
     };
   }

@@ -10,10 +10,10 @@ import type { Area, Role } from "../domain/types";
 // Uso (na pasta server/):
 //   npm run user:add -- "Nome Completo" email@carlcare.com senha123 Carlcare agente
 //
-// Argumentos: nome · email · senha · área (Carlcare|TFAE|Comercial|HQ) · role (agente|gestor)
+// Argumentos: nome · email · senha · área (Carlcare|TFAE) · role (agente|gestor)
 // Área e role são opcionais (padrão: Carlcare / agente).
 
-const AREAS = ["Carlcare", "TFAE", "Comercial", "HQ"] as const;
+const AREAS = ["Carlcare", "TFAE"] as const;
 const ROLES = ["agente", "gestor"] as const;
 
 function fail(msg: string): never {
@@ -47,6 +47,7 @@ users.create({
   email: email.toLowerCase(),
   area: area as Area,
   role: role as Role,
+  pais: "BR",
   senhaHash: bcrypt.hashSync(senha, 10),
 });
 

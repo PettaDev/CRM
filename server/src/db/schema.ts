@@ -18,8 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
   nome       TEXT NOT NULL,
   email      TEXT NOT NULL UNIQUE,
   senha_hash TEXT NOT NULL,
-  area       TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE','Comercial','HQ')),
+  area       TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE')),
   role       TEXT NOT NULL DEFAULT 'agente' CHECK (role IN ('agente','gestor')),
+  pais       TEXT NOT NULL DEFAULT 'BR',
   created_at TEXT NOT NULL
 );
 
@@ -66,8 +67,9 @@ CREATE TABLE IF NOT EXISTS cases (
   defeito         TEXT NOT NULL,
   status          TEXT NOT NULL
                   CHECK (status IN ('novo','validado','aguardando_envio','em_transito','recebido','triagem','fora_garantia','em_reparo','aguardando_peca','pronto','enviado_retorno','finalizado','cancelado')),
-  area            TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE','Comercial','HQ')),
+  area            TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE')),
   responsavel     TEXT NOT NULL,
+  pais            TEXT NOT NULL DEFAULT 'BR',
   canal           TEXT NOT NULL DEFAULT 'WhatsApp',
   garantia_queda  INTEGER NOT NULL DEFAULT 0,
   garantia_agua   INTEGER NOT NULL DEFAULT 0,
@@ -107,9 +109,11 @@ CREATE TABLE IF NOT EXISTS conversations (
   case_id   TEXT REFERENCES cases(id) ON DELETE SET NULL,
   cliente   TEXT NOT NULL,
   telefone  TEXT NOT NULL,
+  pais      TEXT NOT NULL DEFAULT 'BR',
   unread    INTEGER NOT NULL DEFAULT 0,
   last_at   TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_cases_pais ON cases(pais);
 
 CREATE TABLE IF NOT EXISTS messages (
   id               TEXT PRIMARY KEY,

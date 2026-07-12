@@ -7,6 +7,7 @@ interface ConvRow {
   case_id: string | null;
   cliente: string;
   telefone: string;
+  pais: string;
   unread: number;
   last_at: string;
 }
@@ -78,9 +79,9 @@ export class SqliteConversationRepository implements ConversationRepository {
   create(conv: Conversation): void {
     this.db
       .prepare(
-        "INSERT INTO conversations (id, case_id, cliente, telefone, unread, last_at) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO conversations (id, case_id, cliente, telefone, pais, unread, last_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
       )
-      .run(conv.id, conv.caseId, conv.cliente, conv.telefone, conv.unread, conv.lastAt);
+      .run(conv.id, conv.caseId, conv.cliente, conv.telefone, conv.pais, conv.unread, conv.lastAt);
   }
 
   addInboundMessage(conversationId: string, message: ChatMessage): void {
@@ -126,6 +127,7 @@ export class SqliteConversationRepository implements ConversationRepository {
       caseId: r.case_id,
       cliente: r.cliente,
       telefone: r.telefone,
+      pais: r.pais,
       unread: r.unread,
       lastAt: r.last_at,
       messages,

@@ -19,7 +19,7 @@ export type CaseStatus =
   | "finalizado"
   | "cancelado";
 
-export type Area = "Carlcare" | "TFAE" | "Comercial" | "HQ";
+export type Area = "Carlcare" | "TFAE";
 
 export type DeviceBrand = "TECNO" | "Infinix" | "itel" | "Syinix" | "Oraimo";
 
@@ -33,6 +33,7 @@ export interface User {
   email: string;
   area: Area;
   role: Role;
+  pais: string; // código do país (BR, AR, …) — casos criados herdam este país
 }
 
 export type ShipmentDirection = "ida" | "volta";
@@ -67,6 +68,7 @@ export interface ServiceCase {
   status: CaseStatus;
   area: Area;
   responsavel: string;
+  pais: string; // código do país (BR, AR, …)
   canal: "WhatsApp";
   // Triagem de garantia (causas) + conclusão DERIVADA.
   garantiaQueda: boolean;
@@ -93,6 +95,7 @@ export interface Conversation {
   caseId: string | null;
   cliente: string;
   telefone: string;
+  pais: string; // código do país (BR, AR, …)
   unread: number;
   lastAt: string;
   messages: ChatMessage[];

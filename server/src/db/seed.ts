@@ -16,7 +16,7 @@ const USERS: SeedUser[] = [
   { id: "u-1", nome: "Beatriz Nunes", email: "bia@carlcare.com", senha: "carlcare123", area: "Carlcare", role: "agente" },
   { id: "u-2", nome: "Rafael Lima", email: "rafael@carlcare.com", senha: "carlcare123", area: "Carlcare", role: "agente" },
   { id: "u-3", nome: "Camila Duarte", email: "camila@carlcare.com", senha: "carlcare123", area: "TFAE", role: "agente" },
-  { id: "u-4", nome: "Priscila Rocha", email: "priscila@transsion.com", senha: "transsion123", area: "HQ", role: "gestor" },
+  { id: "u-4", nome: "Priscila Rocha", email: "priscila@transsion.com", senha: "transsion123", area: "TFAE", role: "gestor" },
 ];
 
 // Timestamps relativos para a UI ("há X min/h/d") ficar realista.
@@ -49,7 +49,7 @@ const CASES: SeedCase[] = [
   { id: "CC-2026-0005", cliente: "Felipe Carvalho", telefone: "+55 51 98444-3311", cidade: "Porto Alegre", estado: "RS", marca: "Infinix", modelo: "Hot 50", imei: "350998123456780", defeito: "Alto-falante sem som", status: "novo", area: "Carlcare", responsavel: "Rafael Lima", createdAt: h(1), updatedAt: h(1) },
   { id: "CC-2026-0006", cliente: "Renata Lopes", telefone: "+55 85 99222-4567", cidade: "Fortaleza", estado: "CE", marca: "TECNO", modelo: "Pova 6", imei: "356700991122334", defeito: "Conector de carga solto", status: "finalizado", area: "Carlcare", responsavel: "Beatriz Nunes", createdAt: d(7), updatedAt: d(1) },
   { id: "CC-2026-0007", cliente: "Bruno Teixeira", telefone: "+55 62 98777-9090", cidade: "Goiânia", estado: "GO", marca: "itel", modelo: "S24", imei: "359001445566778", defeito: "Touch falhando nas bordas", status: "em_reparo", area: "TFAE", responsavel: "Camila Duarte", createdAt: d(2), updatedAt: h(6) },
-  { id: "CC-2026-0008", cliente: "Larissa Souza", telefone: "+55 11 97333-1212", cidade: "Campinas", estado: "SP", marca: "Oraimo", modelo: "FreePods 4", imei: "—", defeito: "Fone direito não pareia", status: "cancelado", area: "Comercial", responsavel: "Diego Martins", createdAt: d(4), updatedAt: d(2) },
+  { id: "CC-2026-0008", cliente: "Larissa Souza", telefone: "+55 11 97333-1212", cidade: "Campinas", estado: "SP", marca: "Oraimo", modelo: "FreePods 4", imei: "—", defeito: "Fone direito não pareia", status: "cancelado", area: "Carlcare", responsavel: "Beatriz Nunes", createdAt: d(4), updatedAt: d(2) },
   { id: "CC-2026-0009", cliente: "Gustavo Petta", telefone: "+55 11 96000-7788", cidade: "Santo André", estado: "SP", marca: "Infinix", modelo: "Zero 30", imei: "350456778899001", defeito: "Superaquecimento em jogos", status: "triagem", area: "Carlcare", responsavel: "Beatriz Nunes", createdAt: h(10), updatedAt: h(3) },
   { id: "CC-2026-0010", cliente: "Eduarda Pires", telefone: "+55 71 98123-5566", cidade: "Salvador", estado: "BA", marca: "TECNO", modelo: "Spark Go 2024", imei: "356221009988776", defeito: "Microfone com ruído nas chamadas", status: "aguardando_peca", area: "Carlcare", responsavel: "Rafael Lima", createdAt: d(3), updatedAt: h(26) },
   { id: "CC-2026-0011", cliente: "Thiago Farias", telefone: "+55 11 95555-0001", cidade: "Guarulhos", estado: "SP", marca: "Infinix", modelo: "Smart 8", imei: "350112233445566", defeito: "Não reconhece o chip", status: "novo", area: "Carlcare", responsavel: "Beatriz Nunes", createdAt: h(2), updatedAt: h(2) },

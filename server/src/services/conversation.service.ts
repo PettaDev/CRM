@@ -12,6 +12,7 @@ import type {
 import { NotFoundError, ConflictError } from "../domain/errors";
 import { phoneKey } from "../utils/phone";
 import { UNIT_ADDRESS } from "../domain/constants";
+import { countryFromPhone } from "../domain/countries";
 import type { WhatsAppSender } from "./whatsapp.service";
 
 // Serviço da caixa de entrada. Coordena conversa + cliente + caso + templates
@@ -62,6 +63,7 @@ export class ConversationService {
       caseId: null,
       cliente: name,
       telefone: `+${key}`,
+      pais: countryFromPhone(key), // país derivado do DDI (refinado por número no M4)
       unread: 0, // o INSERT registra 0; a mensagem abaixo incrementa para 1
       lastAt: msg.at,
       messages: [],

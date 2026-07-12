@@ -71,13 +71,11 @@ export function statusOptions(current: CaseStatus): CaseStatus[] {
   return [current, ...TRANSITIONS[current].filter((s) => s !== current)];
 }
 
-export const AREAS: Area[] = ["Carlcare", "TFAE", "Comercial", "HQ"];
+export const AREAS: Area[] = ["Carlcare", "TFAE"];
 
 export const AREA_DESC: Record<Area, string> = {
   Carlcare: "Atendimento e reparo (loja/autorizada)",
   TFAE: "Engenharia de campo / pós-venda técnico",
-  Comercial: "Relacionamento e vendas",
-  HQ: "Matriz / consolidação e indicadores",
 };
 
 export const BRANDS: DeviceBrand[] = ["TECNO", "Infinix", "itel", "Syinix", "Oraimo"];

@@ -8,7 +8,7 @@ export function requireRole(...roles: Role[]): RequestHandler {
   return (req, _res, next) => {
     if (!req.user) return next(new UnauthorizedError("Autenticação necessária."));
     if (!roles.includes(req.user.role)) {
-      return next(new ForbiddenError("Acesso restrito à administração (TFAE/HQ)."));
+      return next(new ForbiddenError("Acesso restrito à administração (TFAE)."));
     }
     next();
   };

@@ -17,6 +17,7 @@ interface TokenPayload {
   email: string;
   area: Area;
   role: Role;
+  pais: string;
 }
 
 // Regras de autenticação: valida domínio, confere a senha (bcrypt) e emite JWT.
@@ -47,9 +48,10 @@ export class AuthService {
       email: rec.email,
       area: rec.area,
       role: rec.role,
+      pais: rec.pais,
     };
     const token = jwt.sign(
-      { nome: user.nome, email: user.email, area: user.area, role: user.role },
+      { nome: user.nome, email: user.email, area: user.area, role: user.role, pais: user.pais },
       this.jwtSecret,
       { subject: user.id, expiresIn: "8h" }
     );
@@ -59,7 +61,7 @@ export class AuthService {
   verify(token: string): User {
     try {
       const p = jwt.verify(token, this.jwtSecret) as TokenPayload;
-      return { id: p.sub, nome: p.nome, email: p.email, area: p.area, role: p.role };
+      return { id: p.sub, nome: p.nome, email: p.email, area: p.area, role: p.role, pais: p.pais ?? "BR" };
     } catch {
       throw new UnauthorizedError("Sessão inválida ou expirada.");
     }

@@ -58,8 +58,9 @@ if (!userRepo.findByEmail(config.adminEmail)) {
     id: "u-admin",
     nome: config.adminName,
     email: config.adminEmail,
-    area: "HQ",
+    area: "TFAE",
     role: "gestor",
+    pais: "BR",
     senhaHash: bcrypt.hashSync(config.adminPassword, 10),
   });
   console.log(`✓ Admin criado: ${config.adminEmail}`);

@@ -9,8 +9,8 @@ export const AGENTS: Agent[] = [
   { id: "ag-1", nome: "Beatriz Nunes", area: "Carlcare", iniciais: "BN" },
   { id: "ag-2", nome: "Rafael Lima", area: "Carlcare", iniciais: "RL" },
   { id: "ag-3", nome: "Camila Duarte", area: "TFAE", iniciais: "CD" },
-  { id: "ag-4", nome: "Diego Martins", area: "Comercial", iniciais: "DM" },
-  { id: "ag-5", nome: "Priscila Rocha", area: "HQ", iniciais: "PR" },
+  { id: "ag-4", nome: "Diego Martins", area: "Carlcare", iniciais: "DM" },
+  { id: "ag-5", nome: "Priscila Rocha", area: "TFAE", iniciais: "PR" },
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ export const CASES: ServiceCase[] = [
     imei: "—",
     defeito: "Fone direito não pareia",
     status: "cancelado",
-    area: "Comercial",
+    area: "Carlcare",
     responsavel: "Diego Martins",
     canal: "WhatsApp",
     garantiaAberto: true,

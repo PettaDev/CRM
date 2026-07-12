@@ -8,7 +8,7 @@ export const deviceBrandSchema = z.enum([
   "Syinix",
   "Oraimo",
 ]);
-export const areaSchema = z.enum(["Carlcare", "TFAE", "Comercial", "HQ"]);
+export const areaSchema = z.enum(["Carlcare", "TFAE"]);
 export const caseStatusSchema = z.enum([
   "novo",
   "validado",
@@ -38,6 +38,7 @@ export const createCaseSchema = z.object({
   defeito: z.string().min(1, "Descreva o defeito."),
   area: areaSchema,
   responsavel: z.string().min(1, "Informe o responsável."),
+  pais: z.string().default("BR"), // país do caso (herda do agente/loja)
 });
 export type CreateCaseDto = z.infer<typeof createCaseSchema>;
 

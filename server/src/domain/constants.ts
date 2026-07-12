@@ -17,7 +17,7 @@ export const STATUS_ORDER: CaseStatus[] = [
   "cancelado",
 ];
 
-export const AREAS: Area[] = ["Carlcare", "TFAE", "Comercial", "HQ"];
+export const AREAS: Area[] = ["Carlcare", "TFAE"];
 
 // Um caso é considerado "aberto" enquanto não foi concluído nem cancelado.
 export const CLOSED_STATUSES: CaseStatus[] = ["finalizado", "cancelado"];

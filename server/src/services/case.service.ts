@@ -50,6 +50,7 @@ export class CaseService {
       status: "novo",
       area: dto.area,
       responsavel: dto.responsavel,
+      pais: dto.pais ?? "BR",
       canal: "WhatsApp",
       garantiaQueda: false,
       garantiaAgua: false,

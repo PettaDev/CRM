@@ -31,7 +31,7 @@ export interface Shipment {
 }
 
 // Áreas/filas internas que acompanham o caso.
-export type Area = "Carlcare" | "TFAE" | "Comercial" | "HQ";
+export type Area = "Carlcare" | "TFAE";
 
 // Marcas atendidas pela Carlcare Brasil.
 export type DeviceBrand = "TECNO" | "Infinix" | "itel" | "Syinix" | "Oraimo";
