@@ -2,6 +2,7 @@ import { HashRouter, Route, Routes } from "react-router-dom";
 import { SettingsProvider } from "./settings/SettingsContext";
 import { AuthProvider } from "./auth/AuthContext";
 import RequireAuth from "./components/RequireAuth";
+import RequireRole from "./components/RequireRole";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -10,6 +11,7 @@ import Cases from "./pages/Cases";
 import CaseDetail from "./components/case-detail/CaseDetail";
 import Automations from "./pages/Automations";
 import Reports from "./pages/Reports";
+import Admin from "./pages/Admin";
 import ClientForm from "./pages/ClientForm";
 
 // SPA com roteamento por hash. Públicas: /login e /form/:token (cliente).
@@ -26,12 +28,19 @@ export default function App() {
 
             <Route element={<RequireAuth />}>
               <Route element={<Layout />}>
+                {/* Operacional — agente e gestor */}
                 <Route index element={<Dashboard />} />
                 <Route path="inbox" element={<Inbox />} />
                 <Route path="casos" element={<Cases />} />
                 <Route path="casos/:id" element={<CaseDetail />} />
-                <Route path="automacoes" element={<Automations />} />
-                <Route path="relatorio" element={<Reports />} />
+
+                {/* Administrativo — só gestor (TFAE/HQ) */}
+                <Route element={<RequireRole gestor />}>
+                  <Route path="automacoes" element={<Automations />} />
+                  <Route path="relatorio" element={<Reports />} />
+                  <Route path="admin" element={<Admin />} />
+                </Route>
+
                 <Route path="*" element={<Dashboard />} />
               </Route>
             </Route>

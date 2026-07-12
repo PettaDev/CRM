@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import Logo from "./Logo";
 import {
+  IconAdmin,
   IconAutomation,
   IconBell,
   IconCases,
@@ -15,6 +16,7 @@ import {
 } from "./icons";
 import { useCrm } from "../context/CrmContext";
 import { useAuth } from "../auth/AuthContext";
+import { isGestor } from "../auth/roles";
 import { useT } from "../settings/SettingsContext";
 import { LANGS, type Lang } from "../i18n/dictionaries";
 import { timeAgo } from "../lib/meta";
@@ -25,6 +27,7 @@ interface NavItem {
   label: string;
   icon: ReactNode;
   badge?: number;
+  gestorOnly?: boolean;
 }
 
 export default function Layout() {
@@ -52,13 +55,19 @@ export default function Layout() {
         ? t("topbar.apiOffline")
         : t("topbar.apiChecking");
 
-  const items: NavItem[] = [
-    { to: "/", label: t("nav.overview"), icon: <IconDashboard /> },
-    { to: "/inbox", label: t("nav.inbox"), icon: <IconInbox />, badge: unread },
-    { to: "/casos", label: t("nav.cases"), icon: <IconCases /> },
-    { to: "/automacoes", label: t("nav.automations"), icon: <IconAutomation /> },
-    { to: "/relatorio", label: t("nav.report"), icon: <IconReport /> },
-  ];
+  // Agente (Carlcare) vê só atendimento/casos/dashboard; gestor (TFAE/HQ) vê tudo
+  // + Administração. Filtra pelos itens permitidos ao papel do usuário.
+  const gestor = isGestor(user);
+  const items: NavItem[] = (
+    [
+      { to: "/", label: t("nav.overview"), icon: <IconDashboard /> },
+      { to: "/inbox", label: t("nav.inbox"), icon: <IconInbox />, badge: unread },
+      { to: "/casos", label: t("nav.cases"), icon: <IconCases /> },
+      { to: "/automacoes", label: t("nav.automations"), icon: <IconAutomation />, gestorOnly: true },
+      { to: "/relatorio", label: t("nav.report"), icon: <IconReport />, gestorOnly: true },
+      { to: "/admin", label: t("nav.admin"), icon: <IconAdmin />, gestorOnly: true },
+    ] as NavItem[]
+  ).filter((item) => gestor || !item.gestorOnly);
 
   return (
     <div className="shell">
