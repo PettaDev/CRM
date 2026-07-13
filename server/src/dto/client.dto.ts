@@ -22,12 +22,20 @@ export const clientFormSchema = z
     bairro: z.string().min(1, "Informe o bairro."),
     cidade: z.string().min(1, "Informe a cidade."),
     estado: z.string().min(2, "Informe a UF."),
-    marca: deviceBrandSchema,
-    modelo: z.string().min(1, "Informe o modelo."),
-    imei1: z.string().min(1, "Informe o IMEI 1."),
-    imei2: z.string().default(""),
-    sn: z.string().min(1, "Informe o número de série (SN)."),
-    notaFiscal: z.string().min(1, "Informe a nota fiscal."),
+    // 1..N aparelhos — cada um vira um caso independente (lojas enviam vários).
+    aparelhos: z
+      .array(
+        z.object({
+          marca: deviceBrandSchema,
+          modelo: z.string().min(1, "Informe o modelo."),
+          imei1: z.string().min(1, "Informe o IMEI 1."),
+          imei2: z.string().default(""),
+          sn: z.string().min(1, "Informe o número de série (SN)."),
+          notaFiscal: z.string().min(1, "Informe a nota fiscal."),
+          defeito: z.string().min(1, "Descreva o problema do aparelho."),
+        })
+      )
+      .min(1, "Informe ao menos um aparelho."),
     consentimentoLgpd: z.boolean(),
   })
   .refine((d) => d.consentimentoLgpd === true, {

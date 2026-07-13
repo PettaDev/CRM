@@ -1,5 +1,11 @@
 import type Database from "better-sqlite3";
-import type { Client, ClientForm, DeviceBrand, FormStatus } from "../domain/types";
+import type {
+  Client,
+  ClientForm,
+  DeviceBrand,
+  FormDevice,
+  FormStatus,
+} from "../domain/types";
 
 interface ClientRow {
   telefone_key: string;
@@ -27,6 +33,18 @@ interface FormRow {
   sn: string | null;
   nota_fiscal: string | null;
   consentimento_lgpd: number;
+}
+
+interface DeviceRow {
+  id: number;
+  telefone_key: string;
+  marca: string;
+  modelo: string;
+  imei1: string;
+  imei2: string;
+  sn: string;
+  nota_fiscal: string;
+  defeito: string;
 }
 
 export interface ClientRepository {
@@ -116,6 +134,16 @@ export class SqliteClientRepository implements ClientRepository {
           notaFiscal: form.notaFiscal,
           consentimento: form.consentimentoLgpd ? 1 : 0,
         });
+
+      // Regrava os aparelhos do envio (1..N) — substitui os anteriores.
+      this.db.prepare("DELETE FROM form_devices WHERE telefone_key = ?").run(key);
+      const ins = this.db.prepare(
+        `INSERT INTO form_devices (telefone_key, marca, modelo, imei1, imei2, sn, nota_fiscal, defeito)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      for (const a of form.aparelhos) {
+        ins.run(key, a.marca, a.modelo, a.imei1, a.imei2, a.sn, a.notaFiscal, a.defeito);
+      }
     });
     tx();
   }
@@ -132,12 +160,47 @@ export class SqliteClientRepository implements ClientRepository {
     const f = this.db
       .prepare("SELECT * FROM client_forms WHERE telefone_key = ?")
       .get(r.telefone_key) as FormRow | undefined;
-    if (f) client.form = this.mapForm(f);
+    if (f) {
+      const devices = this.db
+        .prepare("SELECT * FROM form_devices WHERE telefone_key = ? ORDER BY id ASC")
+        .all(r.telefone_key) as DeviceRow[];
+      client.form = this.mapForm(f, devices);
+    }
     return client;
   }
 
-  private mapForm(f: FormRow): ClientForm {
+  private mapDevice(d: DeviceRow): FormDevice {
     return {
+      marca: d.marca as DeviceBrand,
+      modelo: d.modelo,
+      imei1: d.imei1,
+      imei2: d.imei2,
+      sn: d.sn,
+      notaFiscal: d.nota_fiscal,
+      defeito: d.defeito,
+    };
+  }
+
+  private mapForm(f: FormRow, devices: DeviceRow[]): ClientForm {
+    // Sem linhas em form_devices (cadastro antigo): sintetiza 1 aparelho a
+    // partir das colunas legadas, para as telas tratarem tudo como lista.
+    const aparelhos: FormDevice[] = devices.length
+      ? devices.map((d) => this.mapDevice(d))
+      : f.modelo
+        ? [
+            {
+              marca: (f.marca ?? "TECNO") as DeviceBrand,
+              modelo: f.modelo ?? "",
+              imei1: f.imei1 ?? "",
+              imei2: f.imei2 ?? "",
+              sn: f.sn ?? "",
+              notaFiscal: f.nota_fiscal ?? "",
+              defeito: "",
+            },
+          ]
+        : [];
+    return {
+      aparelhos,
       nomeCompleto: f.nome_completo,
       cpf: f.cpf ?? "",
       nascimento: f.nascimento ?? "",

@@ -307,19 +307,34 @@ function ClientPanel({
               {form.cidade}/{form.estado}
               {form.cep ? ` · CEP ${form.cep}` : ""}
             </dd>
-            <dt>Aparelho</dt>
-            <dd>
-              {form.marca} {form.modelo}
-            </dd>
-            <dt>IMEI 1</dt>
-            <dd className="mono">{form.imei1 || "—"}</dd>
-            <dt>IMEI 2</dt>
-            <dd className="mono">{form.imei2 || "—"}</dd>
-            <dt>SN</dt>
-            <dd className="mono">{form.sn || "—"}</dd>
-            <dt>Nota fiscal</dt>
-            <dd className="mono">{form.notaFiscal || "—"}</dd>
           </dl>
+          {(form.aparelhos?.length ? form.aparelhos : [form]).map((a, i, list) => (
+            <div key={i} className="client-device">
+              <p className="client-device-title">
+                📱 {list.length > 1 ? `Aparelho ${i + 1} de ${list.length}` : "Aparelho"}
+              </p>
+              <dl className="kv">
+                <dt>Modelo</dt>
+                <dd>
+                  {a.marca} {a.modelo}
+                </dd>
+                <dt>IMEI 1</dt>
+                <dd className="mono">{a.imei1 || "—"}</dd>
+                <dt>IMEI 2</dt>
+                <dd className="mono">{a.imei2 || "—"}</dd>
+                <dt>SN</dt>
+                <dd className="mono">{a.sn || "—"}</dd>
+                <dt>Nota fiscal</dt>
+                <dd className="mono">{a.notaFiscal || "—"}</dd>
+                {"defeito" in a && a.defeito ? (
+                  <>
+                    <dt>Defeito</dt>
+                    <dd>{a.defeito}</dd>
+                  </>
+                ) : null}
+              </dl>
+            </div>
+          ))}
           {client?.preenchidoAt && (
             <p className="muted small">
               Preenchido em {formatDateTime(client.preenchidoAt)}

@@ -69,6 +69,7 @@ export interface ServiceCase {
   area: Area;
   responsavel: string;
   pais: string; // código do país (BR, AR, …)
+  loteId: string | null; // remessa que agrupa os casos de um mesmo envio
   canal: "WhatsApp";
   // Triagem de garantia (causas) + conclusão DERIVADA.
   garantiaQueda: boolean;
@@ -101,6 +102,17 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+// Um aparelho registrado no formulário. Cada aparelho vira um CASO próprio.
+export interface FormDevice {
+  marca: DeviceBrand;
+  modelo: string;
+  imei1: string;
+  imei2: string;
+  sn: string;
+  notaFiscal: string;
+  defeito: string;
+}
+
 export interface ClientForm {
   nomeCompleto: string;
   cpf: string;
@@ -112,6 +124,7 @@ export interface ClientForm {
   bairro: string;
   cidade: string;
   estado: string;
+  // Legado (1º aparelho) — mantido para compatibilidade com telas/templates.
   marca: DeviceBrand;
   modelo: string;
   imei1: string;
@@ -119,6 +132,8 @@ export interface ClientForm {
   sn: string;
   notaFiscal: string;
   consentimentoLgpd: boolean;
+  // Todos os aparelhos do envio (1..N).
+  aparelhos: FormDevice[];
 }
 
 export interface Client {

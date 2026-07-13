@@ -55,6 +55,29 @@ CREATE TABLE IF NOT EXISTS client_forms (
 );
 CREATE INDEX IF NOT EXISTS idx_client_forms_imei1 ON client_forms(imei1);
 
+-- Aparelhos do formulário (1:N) — cliente/loja pode registrar VÁRIOS celulares
+-- num único envio. Cada aparelho vira um CASO independente, agrupado num lote.
+-- As colunas de aparelho em client_forms viram legado (recebem o 1º aparelho).
+CREATE TABLE IF NOT EXISTS form_devices (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  telefone_key TEXT NOT NULL REFERENCES clients(telefone_key) ON DELETE CASCADE,
+  marca        TEXT NOT NULL,
+  modelo       TEXT NOT NULL,
+  imei1        TEXT NOT NULL,
+  imei2        TEXT NOT NULL DEFAULT '',
+  sn           TEXT NOT NULL DEFAULT '',
+  nota_fiscal  TEXT NOT NULL DEFAULT '',
+  defeito      TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_form_devices_key ON form_devices(telefone_key);
+
+-- Lote = uma remessa (uma caixa/rastreio) com 1..N aparelhos do mesmo cliente.
+CREATE TABLE IF NOT EXISTS lotes (
+  id           TEXT PRIMARY KEY,
+  telefone_key TEXT NOT NULL,
+  criado_em    TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS cases (
   id              TEXT PRIMARY KEY,
   cliente         TEXT NOT NULL,
@@ -70,6 +93,7 @@ CREATE TABLE IF NOT EXISTS cases (
   area            TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE')),
   responsavel     TEXT NOT NULL,
   pais            TEXT NOT NULL DEFAULT 'BR',
+  lote_id         TEXT,
   canal           TEXT NOT NULL DEFAULT 'WhatsApp',
   garantia_queda  INTEGER NOT NULL DEFAULT 0,
   garantia_agua   INTEGER NOT NULL DEFAULT 0,

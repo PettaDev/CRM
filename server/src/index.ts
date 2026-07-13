@@ -85,7 +85,7 @@ const conversationService = new ConversationService(
 
 const controllers = {
   cases: new CaseController(new CaseService(caseRepo, shipmentRepo)),
-  clients: new ClientController(new ClientService(clientRepo)),
+  clients: new ClientController(new ClientService(clientRepo, caseRepo, db)),
   conversations: new ConversationController(conversationService),
   stats: new StatsController(new StatsService(statsRepo)),
   templates: new TemplateController(templateService),

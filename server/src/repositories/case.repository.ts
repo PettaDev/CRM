@@ -21,6 +21,7 @@ interface CaseRow {
   area: string;
   responsavel: string;
   pais: string;
+  lote_id: string | null;
   canal: string;
   garantia_queda: number;
   garantia_agua: number;
@@ -103,8 +104,8 @@ export class SqliteCaseRepository implements CaseRepository {
     const tx = this.db.transaction((caso: ServiceCase) => {
       this.db
         .prepare(
-          `INSERT INTO cases (id, cliente, telefone, cidade, estado, marca, modelo, imei, defeito, status, area, responsavel, pais, canal, garantia_queda, garantia_agua, garantia_aberto, aparelho_liga, validado_em, created_at, updated_at)
-           VALUES (@id, @cliente, @telefone, @cidade, @estado, @marca, @modelo, @imei, @defeito, @status, @area, @responsavel, @pais, @canal, @garantiaQueda, @garantiaAgua, @garantiaAberto, @aparelhoLiga, @validadoEm, @createdAt, @updatedAt)`
+          `INSERT INTO cases (id, cliente, telefone, cidade, estado, marca, modelo, imei, defeito, status, area, responsavel, pais, lote_id, canal, garantia_queda, garantia_agua, garantia_aberto, aparelho_liga, validado_em, created_at, updated_at)
+           VALUES (@id, @cliente, @telefone, @cidade, @estado, @marca, @modelo, @imei, @defeito, @status, @area, @responsavel, @pais, @loteId, @canal, @garantiaQueda, @garantiaAgua, @garantiaAberto, @aparelhoLiga, @validadoEm, @createdAt, @updatedAt)`
         )
         .run({
           id: caso.id,
@@ -120,6 +121,7 @@ export class SqliteCaseRepository implements CaseRepository {
           area: caso.area,
           responsavel: caso.responsavel,
           pais: caso.pais,
+          loteId: caso.loteId,
           canal: caso.canal,
           garantiaQueda: caso.garantiaQueda ? 1 : 0,
           garantiaAgua: caso.garantiaAgua ? 1 : 0,
@@ -206,6 +208,7 @@ export class SqliteCaseRepository implements CaseRepository {
       area: r.area as Area,
       responsavel: r.responsavel,
       pais: r.pais,
+      loteId: r.lote_id,
       canal: "WhatsApp",
       garantiaQueda: !!r.garantia_queda,
       garantiaAgua: !!r.garantia_agua,

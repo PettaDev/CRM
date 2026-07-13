@@ -51,6 +51,7 @@ export class CaseService {
       area: dto.area,
       responsavel: dto.responsavel,
       pais: dto.pais ?? "BR",
+      loteId: null,
       canal: "WhatsApp",
       garantiaQueda: false,
       garantiaAgua: false,

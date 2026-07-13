@@ -1639,6 +1639,37 @@ textarea.input {
   }
 }
 
+/* ── Formulário: múltiplos aparelhos (lojas) ── */
+.device-block {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px 16px;
+  margin: 12px 0;
+}
+.device-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.device-remove {
+  color: #dc2626;
+}
+.add-device {
+  margin: 4px 0 12px;
+  border-style: dashed;
+}
+.client-device {
+  border-top: 1px dashed var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.client-device-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 0 0 6px;
+}
+
 /* ── Administração (gestor) ── */
 .page-admin .page-head {
   margin-bottom: 20px;

@@ -47,6 +47,7 @@ export interface StatusEvent {
 // Caso de assistência técnica (ticket).
 export interface ServiceCase {
   id: string; // ex.: "CC-2026-0007"
+  loteId?: string | null; // remessa que agrupa casos de um mesmo envio
   cliente: string;
   telefone: string;
   cidade: string;
@@ -108,6 +109,17 @@ export type FormStatus = "nao_enviado" | "enviado" | "preenchido";
 
 // Dados que o cliente preenche no formulário. O telefone NÃO entra aqui:
 // ele já é conhecido pela plataforma (chave de associação) e fica travado.
+// Um aparelho do formulário — cada um vira um CASO próprio (lojas enviam vários).
+export interface FormDevice {
+  marca: DeviceBrand;
+  modelo: string;
+  imei1: string; // *#06#
+  imei2: string; // *#06# (segundo SIM)
+  sn: string; // número de série — *#06#
+  notaFiscal: string;
+  defeito: string;
+}
+
 export interface ClientForm {
   nomeCompleto: string;
   cpf: string;
@@ -119,6 +131,7 @@ export interface ClientForm {
   bairro: string;
   cidade: string;
   estado: string; // UF
+  // Legado: dados do 1º aparelho (compatibilidade com telas/mocks antigos).
   marca: DeviceBrand;
   modelo: string;
   imei1: string; // *#06#
@@ -126,6 +139,8 @@ export interface ClientForm {
   sn: string; // número de série — *#06#
   notaFiscal: string;
   consentimentoLgpd: boolean;
+  // Todos os aparelhos do envio (1..N). Opcional para os mocks antigos.
+  aparelhos?: FormDevice[];
 }
 
 // Cliente (pessoa) associado a um número de WhatsApp.
