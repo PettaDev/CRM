@@ -48,6 +48,7 @@ export interface StatusEvent {
 export interface ServiceCase {
   id: string; // ex.: "CC-2026-0007"
   loteId?: string | null; // remessa que agrupa casos de um mesmo envio
+  pais?: string; // código do país (BR, AR, …)
   cliente: string;
   telefone: string;
   cidade: string;
