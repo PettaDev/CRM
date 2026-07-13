@@ -2,8 +2,9 @@ node_modules
 dist
 *.log
 
-# Banco de dados local (gerado por migrate/seed)
-data/
+# Banco de dados local (gerado por migrate/seed) — só a pasta raiz do server;
+# src/data/ (módulos de dados versionados) NÃO entra aqui.
+/data/
 *.sqlite
 *.sqlite3
 *.db
