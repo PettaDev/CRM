@@ -1,4 +1,5 @@
 import path from "node:path";
+import { COUNTRIES } from "../domain/countries";
 
 // Carrega variáveis de um arquivo .env, se existir (recurso nativo do Node 20.12+).
 try {
@@ -23,10 +24,29 @@ export interface AppConfig {
   adminName: string;
   /** SEED_DEMO=1: popula dados de demonstração no boot SE o banco estiver vazio. */
   seedDemo: boolean;
-  /** WhatsApp Cloud API (Meta). Vazios = integração desligada (modo simulado). */
-  whatsappToken: string;
-  whatsappPhoneId: string;
+  /**
+   * WhatsApp Cloud API (Meta) — UM NÚMERO POR PAÍS.
+   * Ativar um país = definir WHATSAPP_TOKEN_<CC> e WHATSAPP_PHONE_ID_<CC> no
+   * Render (ex.: _BR, _AR) — sem deploy. As variáveis sem sufixo valem p/ BR.
+   */
+  whatsapp: Record<string, { token: string; phoneId: string }>;
   whatsappVerifyToken: string;
+}
+
+function readWhatsappByCountry(): Record<string, { token: string; phoneId: string }> {
+  const out: Record<string, { token: string; phoneId: string }> = {};
+  for (const c of COUNTRIES) {
+    const token = process.env[`WHATSAPP_TOKEN_${c.code}`] ?? "";
+    const phoneId = process.env[`WHATSAPP_PHONE_ID_${c.code}`] ?? "";
+    if (token && phoneId) out[c.code] = { token, phoneId };
+  }
+  // Legado (sem sufixo) = Brasil, se o BR não tiver as variáveis novas.
+  const legacyToken = process.env.WHATSAPP_TOKEN ?? "";
+  const legacyPhone = process.env.WHATSAPP_PHONE_ID ?? "";
+  if (!out.BR && legacyToken && legacyPhone) {
+    out.BR = { token: legacyToken, phoneId: legacyPhone };
+  }
+  return out;
 }
 
 // RENDER_EXTERNAL_URL é injetada pelo Render com a URL pública do serviço.
@@ -51,7 +71,6 @@ export const config: AppConfig = {
   adminPassword: process.env.ADMIN_PASSWORD ?? "carlcare123",
   adminName: process.env.ADMIN_NAME ?? "Administrador",
   seedDemo: process.env.SEED_DEMO === "1",
-  whatsappToken: process.env.WHATSAPP_TOKEN ?? "",
-  whatsappPhoneId: process.env.WHATSAPP_PHONE_ID ?? "",
+  whatsapp: readWhatsappByCountry(),
   whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? "carlcare-verify",
 };

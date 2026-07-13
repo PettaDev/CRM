@@ -4,6 +4,7 @@ import type { ConversationService } from "../services/conversation.service";
 import {
   extractInboundMessages,
   type WebhookPayload,
+  type WhatsAppDispatcher,
 } from "../services/whatsapp.service";
 
 // Webhook da WhatsApp Cloud API (Meta). Duas pontas:
@@ -12,7 +13,10 @@ import {
 //  POST /api/webhook — notificações de mensagens recebidas dos clientes.
 // Rotas PÚBLICAS por definição (quem chama é a Meta, não um agente logado).
 // Guia completo: docs/WHATSAPP.md
-export function webhookRoutes(conversations: ConversationService): Router {
+export function webhookRoutes(
+  conversations: ConversationService,
+  whatsapp: WhatsAppDispatcher
+): Router {
   const router = Router();
 
   router.get("/", (req, res) => {
@@ -34,8 +38,14 @@ export function webhookRoutes(conversations: ConversationService): Router {
     const inbound = extractInboundMessages(req.body as WebhookPayload);
     for (const m of inbound) {
       try {
-        const conv = conversations.receiveInbound(m.phone, m.name, m.text);
-        console.log(`[whatsapp] mensagem de ${m.phone} → conversa ${conv.id}`);
+        // País = número da empresa que recebeu (phone_number_id) → registry.
+        const pais = m.phoneNumberId
+          ? (whatsapp.countryForPhoneId(m.phoneNumberId) ?? undefined)
+          : undefined;
+        const conv = conversations.receiveInbound(m.phone, m.name, m.text, pais);
+        console.log(
+          `[whatsapp] mensagem de ${m.phone} (${conv.pais}) → conversa ${conv.id}`
+        );
       } catch (err) {
         console.error("[whatsapp] erro ao processar mensagem recebida:", err);
       }

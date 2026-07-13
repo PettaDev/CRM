@@ -20,7 +20,7 @@ import { TemplateController } from "./controllers/template.controller";
 import { SqliteUserRepository } from "./repositories/user.repository";
 import { AuthService } from "./services/auth.service";
 import { AuthController } from "./controllers/auth.controller";
-import { WhatsAppService } from "./services/whatsapp.service";
+import { WhatsAppRegistry } from "./services/whatsapp.service";
 import { requireAuth as makeRequireAuth } from "./middleware/require-auth";
 import { SqliteSheetRepository } from "./repositories/sheet.repository";
 import { TROCAS_DATA, ESTOQUE_DATA, MODELOS_DATA } from "./data/planilha-data";
@@ -92,7 +92,8 @@ for (const [sheet, data] of PLANILHA_SEED) {
 const templateService = new TemplateService();
 const authService = new AuthService(userRepo, config.jwtSecret);
 const requireAuth = makeRequireAuth(authService);
-const whatsapp = new WhatsAppService(config.whatsappToken, config.whatsappPhoneId);
+// Um número de WhatsApp por país (WHATSAPP_TOKEN_<CC> / WHATSAPP_PHONE_ID_<CC>).
+const whatsapp = new WhatsAppRegistry(config.whatsapp);
 
 const conversationService = new ConversationService(
   conversationRepo,
@@ -117,14 +118,19 @@ const app = createApp(
   requireAuth,
   conversationService,
   sheetRepo,
-  userRepo
+  userRepo,
+  whatsapp
 );
 app.listen(config.port, () => {
   console.log(
     `🚀 API Carlcare CRM em http://localhost:${config.port}/api  (origem CORS: ${config.corsOrigin})`
   );
   if (config.staticDir) console.log(`   Servindo frontend de: ${config.staticDir}`);
+  const ativos = whatsapp
+    .status()
+    .filter((s) => s.ativo)
+    .map((s) => s.pais);
   console.log(
-    `   WhatsApp Cloud API: ${whatsapp.enabled ? "ATIVA" : "desligada (modo simulado — ver docs/WHATSAPP.md)"}`
+    `   WhatsApp Cloud API: ${ativos.length ? `ATIVA (${ativos.join(", ")})` : "desligada (modo simulado — ver docs/WHATSAPP.md)"}`
   );
 });

@@ -57,6 +57,55 @@ export class WhatsAppService implements WhatsAppSender {
   }
 }
 
+// ── Registry multi-país: um número (WhatsAppService) por país ──────────────
+// Ativar um país = adicionar WHATSAPP_TOKEN_<CC> + WHATSAPP_PHONE_ID_<CC> no
+// ambiente. Entrada: a Meta informa qual número recebeu (phone_number_id) →
+// país. Saída: a mensagem sai pelo número do país da conversa.
+
+export interface WhatsAppDispatcher {
+  send(pais: string, toPhone: string, text: string): Promise<void>;
+  /** país de um phone_number_id recebido no webhook (null = desconhecido). */
+  countryForPhoneId(phoneNumberId: string): string | null;
+  /** situação por país — alimenta o painel da Administração. */
+  status(): Array<{ pais: string; ativo: boolean }>;
+  readonly anyEnabled: boolean;
+}
+
+import { COUNTRIES } from "../domain/countries";
+
+export class WhatsAppRegistry implements WhatsAppDispatcher {
+  private readonly senders = new Map<string, WhatsAppService>();
+  private readonly byPhoneId = new Map<string, string>();
+
+  constructor(creds: Record<string, { token: string; phoneId: string }>) {
+    for (const [pais, c] of Object.entries(creds)) {
+      this.senders.set(pais, new WhatsAppService(c.token, c.phoneId));
+      this.byPhoneId.set(c.phoneId, pais);
+    }
+  }
+
+  get anyEnabled(): boolean {
+    return this.senders.size > 0;
+  }
+
+  async send(pais: string, toPhone: string, text: string): Promise<void> {
+    const sender = this.senders.get(pais) ?? this.senders.get("BR");
+    if (!sender) {
+      console.log(`[whatsapp:simulado ${pais}] → ${toPhone}: ${text.slice(0, 80)}…`);
+      return;
+    }
+    await sender.sendText(toPhone, text);
+  }
+
+  countryForPhoneId(phoneNumberId: string): string | null {
+    return this.byPhoneId.get(phoneNumberId) ?? null;
+  }
+
+  status(): Array<{ pais: string; ativo: boolean }> {
+    return COUNTRIES.map((c) => ({ pais: c.code, ativo: this.senders.has(c.code) }));
+  }
+}
+
 // ── Tipos do payload de webhook que a Meta envia (subconjunto que usamos) ──
 export interface WebhookMessage {
   from: string; // telefone do cliente (só dígitos, com DDI)
@@ -71,6 +120,7 @@ export interface WebhookPayload {
   entry?: Array<{
     changes?: Array<{
       value?: {
+        metadata?: { phone_number_id?: string };
         contacts?: Array<{ profile?: { name?: string }; wa_id?: string }>;
         messages?: WebhookMessage[];
       };
@@ -78,18 +128,25 @@ export interface WebhookPayload {
   }>;
 }
 
+export interface InboundMessage {
+  phone: string;
+  name: string;
+  text: string;
+  /** número (da empresa) que RECEBEU a mensagem — identifica o país. */
+  phoneNumberId: string;
+}
+
 /** Extrai as mensagens de texto recebidas de um payload de webhook da Meta. */
-export function extractInboundMessages(
-  payload: WebhookPayload
-): Array<{ phone: string; name: string; text: string }> {
-  const out: Array<{ phone: string; name: string; text: string }> = [];
+export function extractInboundMessages(payload: WebhookPayload): InboundMessage[] {
+  const out: InboundMessage[] = [];
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
       const value = change.value;
       const name = value?.contacts?.[0]?.profile?.name ?? "Cliente WhatsApp";
+      const phoneNumberId = value?.metadata?.phone_number_id ?? "";
       for (const msg of value?.messages ?? []) {
         if (msg.type === "text" && msg.text?.body) {
-          out.push({ phone: msg.from, name, text: msg.text.body });
+          out.push({ phone: msg.from, name, text: msg.text.body, phoneNumberId });
         }
       }
     }

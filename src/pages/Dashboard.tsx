@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { isGestor } from "../auth/roles";
 import { useT } from "../settings/SettingsContext";
 import { exportWeeklyReport } from "../lib/weeklyReport";
+import { countryName } from "../lib/countries";
 import StatusBadge from "../components/StatusBadge";
 import {
   AREAS,
@@ -17,10 +18,22 @@ import {
 import type { Area, CaseStatus } from "../types";
 
 export default function Dashboard() {
-  const { cases } = useCrm();
+  const { cases: allCases } = useCrm();
   const { user } = useAuth();
   const { t } = useT();
   const [exporting, setExporting] = useState(false);
+  const [pais, setPais] = useState("");
+
+  // Filtro por país: problema recebido no WhatsApp ou criado por uma conta de
+  // um país fica vinculado a ele. "" = todos.
+  const paisesExistentes = useMemo(
+    () => [...new Set(allCases.map((c) => c.pais ?? "BR"))].sort(),
+    [allCases]
+  );
+  const cases = useMemo(
+    () => (pais ? allCases.filter((c) => (c.pais ?? "BR") === pais) : allCases),
+    [allCases, pais]
+  );
 
   async function handleExport() {
     setExporting(true);
@@ -70,6 +83,19 @@ export default function Dashboard() {
           <p className="muted">{t("dash.subtitle")}</p>
         </div>
         <div className="page-head-actions">
+          <select
+            className="input pais-filter"
+            value={pais}
+            onChange={(e) => setPais(e.target.value)}
+            aria-label={t("dash.country")}
+          >
+            <option value="">{t("dash.allCountries")}</option>
+            {paisesExistentes.map((p) => (
+              <option key={p} value={p}>
+                {countryName(p)}
+              </option>
+            ))}
+          </select>
           {isGestor(user) && (
             <button className="btn" onClick={handleExport} disabled={exporting}>
               {exporting ? "…" : t("dash.export")}

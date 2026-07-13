@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useT } from "../settings/SettingsContext";
 import { usersApi, type AdminUser } from "../api/users.api";
+import { countryName } from "../lib/countries";
+import { http } from "../api/client";
 
 // Área de Administração (somente gestor — TFAE).
 export default function Admin() {
@@ -19,13 +21,9 @@ export default function Admin() {
 
       <AccountsSection currentUserId={user?.id} />
 
-      <div className="admin-grid">
-        <section className="card admin-card">
-          <h2>{t("admin.whatsapp")}</h2>
-          <p className="muted small">{t("admin.whatsappHint")}</p>
-          <span className="badge-soon">{t("admin.soon")}</span>
-        </section>
+      <WhatsAppSection />
 
+      <div className="admin-grid">
         <section className="card admin-card">
           <h2>{t("admin.warranty")}</h2>
           <p className="muted small">{t("admin.warrantyDone")}</p>
@@ -36,6 +34,42 @@ export default function Admin() {
         {t("admin.loggedAs")}: <strong>{user?.nome}</strong> · {user?.area} · {user?.role}
       </p>
     </div>
+  );
+}
+
+// ── WhatsApp por país: cada Carlcare vincula seu número (env no Render) ──
+function WhatsAppSection() {
+  const { t } = useT();
+  const [status, setStatus] = useState<Array<{ pais: string; ativo: boolean }>>([]);
+
+  useEffect(() => {
+    http
+      .get<Array<{ pais: string; ativo: boolean }>>("/admin/whatsapp")
+      .then(setStatus)
+      .catch(() => setStatus([]));
+  }, []);
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h2>{t("admin.whatsapp")}</h2>
+        <span className="muted">
+          {status.filter((s) => s.ativo).length}/{status.length} {t("admin.waActive")}
+        </span>
+      </div>
+      <p className="muted small">{t("admin.whatsappHint")}</p>
+      <div className="wa-grid">
+        {status.map((s) => (
+          <div key={s.pais} className={"wa-country" + (s.ativo ? " on" : "")}>
+            <span>{countryName(s.pais)}</span>
+            <span className={"wa-dot" + (s.ativo ? " on" : "")} />
+            <span className="muted small">
+              {s.ativo ? t("admin.waConnected") : `WHATSAPP_TOKEN_${s.pais}`}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

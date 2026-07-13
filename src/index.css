@@ -1804,6 +1804,44 @@ tr:hover .sheet-del {
 .admin-you {
   margin-top: 20px;
 }
+.pais-filter {
+  width: auto;
+  min-width: 150px;
+}
+.wa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.wa-country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+.wa-country.on {
+  opacity: 1;
+  border-color: color-mix(in srgb, #16a34a 40%, transparent);
+}
+.wa-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.wa-dot.on {
+  background: #16a34a;
+}
+.wa-country .muted.small {
+  margin-left: auto;
+  font-size: 0.7rem;
+}
 .account-form {
   display: grid;
   grid-template-columns: 1.2fr 1.4fr 1fr 0.8fr 1fr auto;

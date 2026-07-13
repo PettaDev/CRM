@@ -13,7 +13,7 @@ import { NotFoundError, ConflictError } from "../domain/errors";
 import { phoneKey } from "../utils/phone";
 import { UNIT_ADDRESS } from "../domain/constants";
 import { countryFromPhone } from "../domain/countries";
-import type { WhatsAppSender } from "./whatsapp.service";
+import type { WhatsAppDispatcher } from "./whatsapp.service";
 
 // Serviço da caixa de entrada. Coordena conversa + cliente + caso + templates
 // (caso de uso de mensageria). Dependências injetadas por construtor.
@@ -25,8 +25,8 @@ export class ConversationService {
     private readonly templates: TemplateService,
     private readonly frontendBaseUrl: string,
     // Opcional: quando configurado (docs/WHATSAPP.md), toda mensagem do agente
-    // sai também pelo WhatsApp real. Sem ele, o envio é apenas registrado no banco.
-    private readonly whatsapp?: WhatsAppSender
+    // sai também pelo WhatsApp real — pelo NÚMERO DO PAÍS da conversa.
+    private readonly whatsapp?: WhatsAppDispatcher
   ) {}
 
   list(): Conversation[] {
@@ -42,13 +42,19 @@ export class ConversationService {
   addMessage(id: string, dto: AddMessageDto): Conversation {
     const conv = this.getById(id);
     this.conversations.addMessage(id, this.newMessage(dto.from, dto.text));
-    if (dto.from === "agente") this.deliver(conv.telefone, dto.text);
+    if (dto.from === "agente") this.deliver(conv.pais, conv.telefone, dto.text);
     return this.getById(id);
   }
 
   // Mensagem recebida pelo WEBHOOK do WhatsApp. Se já existe conversa para o
   // telefone, anexa (e marca como não lida); senão, abre uma conversa nova.
-  receiveInbound(phone: string, name: string, text: string): Conversation {
+  // `pais` vem do número que RECEBEU (phone_number_id); sem ele, cai no DDI.
+  receiveInbound(
+    phone: string,
+    name: string,
+    text: string,
+    pais?: string
+  ): Conversation {
     const key = phoneKey(phone);
     const existing = this.conversations.findByPhoneKey(key);
     const msg = this.newMessage("cliente", text);
@@ -63,7 +69,7 @@ export class ConversationService {
       caseId: null,
       cliente: name,
       telefone: `+${key}`,
-      pais: countryFromPhone(key), // país derivado do DDI (refinado por número no M4)
+      pais: pais ?? countryFromPhone(key),
       unread: 0, // o INSERT registra 0; a mensagem abaixo incrementa para 1
       lastAt: msg.at,
       messages: [],
@@ -90,7 +96,7 @@ export class ConversationService {
       `Olá, ${conv.cliente.split(" ")[0]}! 👋 Aqui é a Carlcare. ` +
       `Para agilizar seu atendimento, preencha seu cadastro: ${link}`;
     this.conversations.addMessage(id, this.newMessage("agente", text));
-    this.deliver(conv.telefone, text);
+    this.deliver(conv.pais, conv.telefone, text);
 
     const client = this.clients.findByKey(key);
     if (!client) throw new NotFoundError("Cliente", key);
@@ -113,16 +119,16 @@ export class ConversationService {
     const client = this.clients.findByKey(phoneKey(conv.telefone)) ?? undefined;
     const text = this.templates.render(templateId, this.buildVars(caso, client));
     this.conversations.addMessage(id, this.newMessage("agente", text));
-    this.deliver(conv.telefone, text);
+    this.deliver(conv.pais, conv.telefone, text);
     return this.getById(id);
   }
 
   // ── helpers ──
 
-  // Entrega best-effort pelo WhatsApp real: a mensagem já está registrada no
-  // banco (fonte de verdade); falha de rede não pode quebrar o fluxo do agente.
-  private deliver(phone: string, text: string): void {
-    void this.whatsapp?.sendText(phone, text).catch((err) => {
+  // Entrega best-effort pelo WhatsApp real (número do país da conversa): a
+  // mensagem já está no banco; falha de rede não quebra o fluxo do agente.
+  private deliver(pais: string, phone: string, text: string): void {
+    void this.whatsapp?.send(pais, phone, text).catch((err) => {
       console.error("[whatsapp] falha na entrega:", err);
     });
   }

@@ -7,6 +7,7 @@ import { requireRole } from "../middleware/require-role";
 import type { ConversationService } from "../services/conversation.service";
 import type { SqliteSheetRepository } from "../repositories/sheet.repository";
 import type { UserRepository } from "../repositories/user.repository";
+import type { WhatsAppDispatcher } from "../services/whatsapp.service";
 import { caseRoutes } from "./case.routes";
 import { clientRoutes } from "./client.routes";
 import { conversationRoutes } from "./conversation.routes";
@@ -33,7 +34,8 @@ export function buildRoutes(
   requireAuth: RequestHandler,
   conversationService: ConversationService,
   sheetRepo: SqliteSheetRepository,
-  userRepo: UserRepository
+  userRepo: UserRepository,
+  whatsapp: WhatsAppDispatcher
 ): Router {
   const router = Router();
 
@@ -41,7 +43,7 @@ export function buildRoutes(
   router.use("/auth", authRoutes(c.auth, requireAuth));
 
   // Público: webhook da WhatsApp Cloud API (quem chama é a Meta).
-  router.use("/webhook", webhookRoutes(conversationService));
+  router.use("/webhook", webhookRoutes(conversationService, whatsapp));
 
   // Protegido — exige agente autenticado.
   router.use("/cases", requireAuth, caseRoutes(c.cases));
@@ -57,6 +59,11 @@ export function buildRoutes(
 
   // Contas de acesso — administração (gestor).
   router.use("/users", requireAuth, requireRole("gestor"), userRoutes(userRepo));
+
+  // Situação do WhatsApp por país — administração (gestor).
+  router.get("/admin/whatsapp", requireAuth, requireRole("gestor"), (_req, res) => {
+    res.json(whatsapp.status());
+  });
 
   return router;
 }

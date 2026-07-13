@@ -25,10 +25,12 @@ services:
       - key: SEED_DEMO
         value: "1" # dados de demonstração no boot (banco vazio). "0" = produção real
 
-      # WhatsApp Cloud API — preencha no dashboard quando configurar (docs/WHATSAPP.md)
-      - key: WHATSAPP_TOKEN
+      # WhatsApp Cloud API — UM NÚMERO POR PAÍS (docs/WHATSAPP.md).
+      # Ativar um país = definir o par WHATSAPP_TOKEN_<CC> + WHATSAPP_PHONE_ID_<CC>
+      # no dashboard (ex.: _AR para Argentina) — sem deploy. Sem sufixo = Brasil.
+      - key: WHATSAPP_TOKEN_BR
         sync: false
-      - key: WHATSAPP_PHONE_ID
+      - key: WHATSAPP_PHONE_ID_BR
         sync: false
       - key: WHATSAPP_VERIFY_TOKEN
         generateValue: true

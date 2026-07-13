@@ -9,6 +9,7 @@ import { buildRoutes, type Controllers } from "./routes";
 import type { ConversationService } from "./services/conversation.service";
 import type { SqliteSheetRepository } from "./repositories/sheet.repository";
 import type { UserRepository } from "./repositories/user.repository";
+import type { WhatsAppDispatcher } from "./services/whatsapp.service";
 
 // Fábrica do app Express. Recebe os controllers e o middleware de autenticação
 // por parâmetro (inversão de controle) — facilita testar e trocar implementações.
@@ -17,7 +18,8 @@ export function createApp(
   requireAuth: RequestHandler,
   conversationService: ConversationService,
   sheetRepo: SqliteSheetRepository,
-  userRepo: UserRepository
+  userRepo: UserRepository,
+  whatsapp: WhatsAppDispatcher
 ): Express {
   const app = express();
 
@@ -31,7 +33,14 @@ export function createApp(
 
   app.use(
     "/api",
-    buildRoutes(controllers, requireAuth, conversationService, sheetRepo, userRepo)
+    buildRoutes(
+      controllers,
+      requireAuth,
+      conversationService,
+      sheetRepo,
+      userRepo,
+      whatsapp
+    )
   );
 
   // Produção: o mesmo processo serve o build do frontend (single service —
