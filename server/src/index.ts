@@ -112,7 +112,13 @@ const controllers = {
   auth: new AuthController(authService),
 };
 
-const app = createApp(controllers, requireAuth, conversationService, sheetRepo);
+const app = createApp(
+  controllers,
+  requireAuth,
+  conversationService,
+  sheetRepo,
+  userRepo
+);
 app.listen(config.port, () => {
   console.log(
     `🚀 API Carlcare CRM em http://localhost:${config.port}/api  (origem CORS: ${config.corsOrigin})`

@@ -18,12 +18,33 @@ export interface UserRecord extends User {
 
 export interface UserRepository {
   findByEmail(email: string): UserRecord | null;
+  /** Lista SEM o hash de senha — para a tela de administração. */
+  findAll(): User[];
   count(): number;
   create(user: UserRecord): void;
+  remove(id: string): boolean;
 }
 
 export class SqliteUserRepository implements UserRepository {
   constructor(private readonly db: Database.Database) {}
+
+  findAll(): User[] {
+    const rows = this.db
+      .prepare("SELECT id, nome, email, area, role, pais FROM users ORDER BY nome")
+      .all() as Array<Omit<UserRow, "senha_hash">>;
+    return rows.map((r) => ({
+      id: r.id,
+      nome: r.nome,
+      email: r.email,
+      area: r.area as Area,
+      role: r.role as Role,
+      pais: r.pais,
+    }));
+  }
+
+  remove(id: string): boolean {
+    return this.db.prepare("DELETE FROM users WHERE id = ?").run(id).changes > 0;
+  }
 
   count(): number {
     const row = this.db

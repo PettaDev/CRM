@@ -2,9 +2,11 @@ import { Router, type RequestHandler } from "express";
 import { authRoutes } from "./auth.routes";
 import { webhookRoutes } from "./webhook.routes";
 import { sheetRoutes } from "./sheet.routes";
+import { userRoutes } from "./user.routes";
 import { requireRole } from "../middleware/require-role";
 import type { ConversationService } from "../services/conversation.service";
 import type { SqliteSheetRepository } from "../repositories/sheet.repository";
+import type { UserRepository } from "../repositories/user.repository";
 import { caseRoutes } from "./case.routes";
 import { clientRoutes } from "./client.routes";
 import { conversationRoutes } from "./conversation.routes";
@@ -30,7 +32,8 @@ export function buildRoutes(
   c: Controllers,
   requireAuth: RequestHandler,
   conversationService: ConversationService,
-  sheetRepo: SqliteSheetRepository
+  sheetRepo: SqliteSheetRepository,
+  userRepo: UserRepository
 ): Router {
   const router = Router();
 
@@ -51,6 +54,9 @@ export function buildRoutes(
 
   // Planilhas operacionais — administração (gestor).
   router.use("/sheets", requireAuth, requireRole("gestor"), sheetRoutes(sheetRepo));
+
+  // Contas de acesso — administração (gestor).
+  router.use("/users", requireAuth, requireRole("gestor"), userRoutes(userRepo));
 
   return router;
 }

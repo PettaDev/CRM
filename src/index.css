@@ -1804,3 +1804,14 @@ tr:hover .sheet-del {
 .admin-you {
   margin-top: 20px;
 }
+.account-form {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr 1fr 0.8fr 1fr auto;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 900px) {
+  .account-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
