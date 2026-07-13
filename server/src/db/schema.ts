@@ -139,6 +139,40 @@ CREATE TABLE IF NOT EXISTS conversations (
 );
 CREATE INDEX IF NOT EXISTS idx_cases_pais ON cases(pais);
 
+-- ── Planilhas operacionais (importadas do Excel da unidade; editáveis no app) ──
+
+-- Trocas autorizadas (aparelho antigo → aparelho novo).
+CREATE TABLE IF NOT EXISTS trocas (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome        TEXT NOT NULL DEFAULT '',
+  envio       TEXT NOT NULL DEFAULT '',
+  modelo      TEXT NOT NULL DEFAULT '',
+  imei        TEXT NOT NULL DEFAULT '',
+  modelo_novo TEXT NOT NULL DEFAULT '',
+  imei_novo   TEXT NOT NULL DEFAULT '',
+  gjs         TEXT NOT NULL DEFAULT ''
+);
+
+-- Banco de aparelhos lacrados (estoque para troca).
+CREATE TABLE IF NOT EXISTS estoque_lacrados (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  modelo    TEXT NOT NULL DEFAULT '',
+  imei      TEXT NOT NULL DEFAULT '',
+  n_estoque TEXT NOT NULL DEFAULT '',
+  status    TEXT NOT NULL DEFAULT 'DISPONIVEL'
+            CHECK (status IN ('DISPONIVEL','TROCA','DESMONTADO')),
+  obs       TEXT NOT NULL DEFAULT ''
+);
+
+-- Referência de modelos por marca (código interno ↔ modelo ↔ geração de rede).
+CREATE TABLE IF NOT EXISTS modelos_ref (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  marca   TEXT NOT NULL DEFAULT '',
+  codigo  TEXT NOT NULL DEFAULT '',
+  modelo  TEXT NOT NULL DEFAULT '',
+  geracao TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE IF NOT EXISTS messages (
   id               TEXT PRIMARY KEY,
   conversation_id  TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,

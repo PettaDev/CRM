@@ -22,6 +22,8 @@ import { AuthService } from "./services/auth.service";
 import { AuthController } from "./controllers/auth.controller";
 import { WhatsAppService } from "./services/whatsapp.service";
 import { requireAuth as makeRequireAuth } from "./middleware/require-auth";
+import { SqliteSheetRepository } from "./repositories/sheet.repository";
+import { TROCAS_DATA, ESTOQUE_DATA, MODELOS_DATA } from "./data/planilha-data";
 import { createApp } from "./app";
 import bcrypt from "bcryptjs";
 
@@ -69,6 +71,24 @@ if (!userRepo.findByEmail(config.adminEmail)) {
   }
 }
 
+// Planilhas operacionais: importa os dados da planilha original quando as
+// tabelas estão vazias (dados de referência/base — independem do SEED_DEMO).
+const sheetRepo = new SqliteSheetRepository(db);
+const PLANILHA_SEED: Array<[string, Record<string, string>[]]> = [
+  ["trocas", TROCAS_DATA],
+  ["estoque", ESTOQUE_DATA],
+  ["modelos", MODELOS_DATA],
+];
+for (const [sheet, data] of PLANILHA_SEED) {
+  if (sheetRepo.count(sheet) === 0 && data.length > 0) {
+    const load = db.transaction(() => {
+      for (const row of data) sheetRepo.insert(sheet, row);
+    });
+    load();
+    console.log(`✓ Planilha "${sheet}" importada: ${data.length} linhas.`);
+  }
+}
+
 const templateService = new TemplateService();
 const authService = new AuthService(userRepo, config.jwtSecret);
 const requireAuth = makeRequireAuth(authService);
@@ -92,7 +112,7 @@ const controllers = {
   auth: new AuthController(authService),
 };
 
-const app = createApp(controllers, requireAuth, conversationService);
+const app = createApp(controllers, requireAuth, conversationService, sheetRepo);
 app.listen(config.port, () => {
   console.log(
     `🚀 API Carlcare CRM em http://localhost:${config.port}/api  (origem CORS: ${config.corsOrigin})`

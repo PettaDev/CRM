@@ -7,13 +7,15 @@ import { requestLogger } from "./middleware/request-logger";
 import { errorHandler } from "./middleware/error-handler";
 import { buildRoutes, type Controllers } from "./routes";
 import type { ConversationService } from "./services/conversation.service";
+import type { SqliteSheetRepository } from "./repositories/sheet.repository";
 
 // Fábrica do app Express. Recebe os controllers e o middleware de autenticação
 // por parâmetro (inversão de controle) — facilita testar e trocar implementações.
 export function createApp(
   controllers: Controllers,
   requireAuth: RequestHandler,
-  conversationService: ConversationService
+  conversationService: ConversationService,
+  sheetRepo: SqliteSheetRepository
 ): Express {
   const app = express();
 
@@ -25,7 +27,7 @@ export function createApp(
     res.json({ status: "ok", ts: new Date().toISOString() });
   });
 
-  app.use("/api", buildRoutes(controllers, requireAuth, conversationService));
+  app.use("/api", buildRoutes(controllers, requireAuth, conversationService, sheetRepo));
 
   // Produção: o mesmo processo serve o build do frontend (single service —
   // sem CORS entre front e API). STATIC_DIR aponta para o dist/ do Vite.

@@ -12,6 +12,7 @@ import {
   IconMoon,
   IconReport,
   IconSearch,
+  IconSheet,
   IconSun,
 } from "./icons";
 import { useCrm } from "../context/CrmContext";
@@ -65,6 +66,7 @@ export default function Layout() {
       { to: "/casos", label: t("nav.cases"), icon: <IconCases /> },
       { to: "/automacoes", label: t("nav.automations"), icon: <IconAutomation />, gestorOnly: true },
       { to: "/relatorio", label: t("nav.report"), icon: <IconReport />, gestorOnly: true },
+      { to: "/planilhas", label: t("nav.sheets"), icon: <IconSheet />, gestorOnly: true },
       { to: "/admin", label: t("nav.admin"), icon: <IconAdmin />, gestorOnly: true },
     ] as NavItem[]
   ).filter((item) => gestor || !item.gestorOnly);

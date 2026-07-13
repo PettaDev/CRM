@@ -12,6 +12,7 @@ import CaseDetail from "./components/case-detail/CaseDetail";
 import Automations from "./pages/Automations";
 import Reports from "./pages/Reports";
 import Admin from "./pages/Admin";
+import Sheets from "./pages/Sheets";
 import ClientForm from "./pages/ClientForm";
 
 // SPA com roteamento por hash. Públicas: /login e /form/:token (cliente).
@@ -38,6 +39,7 @@ export default function App() {
                 <Route element={<RequireRole gestor />}>
                   <Route path="automacoes" element={<Automations />} />
                   <Route path="relatorio" element={<Reports />} />
+                  <Route path="planilhas" element={<Sheets />} />
                   <Route path="admin" element={<Admin />} />
                 </Route>
 

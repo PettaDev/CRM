@@ -1,7 +1,10 @@
 import { Router, type RequestHandler } from "express";
 import { authRoutes } from "./auth.routes";
 import { webhookRoutes } from "./webhook.routes";
+import { sheetRoutes } from "./sheet.routes";
+import { requireRole } from "../middleware/require-role";
 import type { ConversationService } from "../services/conversation.service";
+import type { SqliteSheetRepository } from "../repositories/sheet.repository";
 import { caseRoutes } from "./case.routes";
 import { clientRoutes } from "./client.routes";
 import { conversationRoutes } from "./conversation.routes";
@@ -26,7 +29,8 @@ export interface Controllers {
 export function buildRoutes(
   c: Controllers,
   requireAuth: RequestHandler,
-  conversationService: ConversationService
+  conversationService: ConversationService,
+  sheetRepo: SqliteSheetRepository
 ): Router {
   const router = Router();
 
@@ -44,6 +48,9 @@ export function buildRoutes(
 
   // Clientes: a lista é protegida; o formulário (que o cliente abre) é público.
   router.use("/clients", clientRoutes(c.clients, requireAuth));
+
+  // Planilhas operacionais — administração (gestor).
+  router.use("/sheets", requireAuth, requireRole("gestor"), sheetRoutes(sheetRepo));
 
   return router;
 }
