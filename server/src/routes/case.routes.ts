@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validate } from "../middleware/validate";
-import { createCaseSchema, updateStatusSchema } from "../dto/case.dto";
+import { ativacaoSchema, createCaseSchema, updateStatusSchema } from "../dto/case.dto";
 import { addShipmentSchema } from "../dto/shipment.dto";
 import { updateGarantiaSchema } from "../dto/garantia.dto";
 import type { CaseController } from "../controllers/case.controller";
@@ -12,6 +12,7 @@ export function caseRoutes(controller: CaseController): Router {
   router.post("/", validate(createCaseSchema), controller.create);
   router.patch("/:id/status", validate(updateStatusSchema), controller.updateStatus);
   router.patch("/:id/garantia", validate(updateGarantiaSchema), controller.updateGarantia);
+  router.patch("/:id/ativacao", validate(ativacaoSchema), controller.setAtivacao);
   router.post("/:id/shipments", validate(addShipmentSchema), controller.addShipment);
   return router;
 }

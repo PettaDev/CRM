@@ -36,11 +36,37 @@ describe("CaseService", () => {
     expect(c.historico).toHaveLength(1);
   });
 
-  it("FSM: permite novo → validado e grava validadoEm (gate)", () => {
+  it("FSM: permite novo → validado APÓS o Gate 1 (garantia por tempo ok)", () => {
     const c = service.create(baseInput);
+    // Gate 1: ativação recente → dentro da garantia por tempo.
+    const hoje = new Date().toISOString().slice(0, 10);
+    const g = service.setAtivacao(c.id, hoje);
+    expect(g.garantiaTempo).toBe("dentro");
+
     const v = service.changeStatus(c.id, { status: "validado", by: "Bia" });
     expect(v.status).toBe("validado");
     expect(v.validadoEm).not.toBeNull();
+  });
+
+  it("Gate 1: bloqueia validar sem informar a ativação (pendente)", () => {
+    const c = service.create(baseInput);
+    expect(() =>
+      service.changeStatus(c.id, { status: "validado", by: "Bia" })
+    ).toThrow(ConflictError);
+  });
+
+  it("Gate 1: garantia por tempo expirada bloqueia o envio (nem precisa enviar)", () => {
+    const c = service.create(baseInput);
+    const g = service.setAtivacao(c.id, "2020-01-15"); // muito além dos 12 meses
+    expect(g.garantiaTempo).toBe("expirada");
+    expect(g.garantiaExpiraEm).toBe("2021-01-15");
+
+    expect(() =>
+      service.changeStatus(c.id, { status: "validado", by: "Bia" })
+    ).toThrow(ConflictError);
+    // Caminho correto: direto para fora de garantia, sem coleta.
+    const f = service.changeStatus(c.id, { status: "fora_garantia", by: "Bia" });
+    expect(f.status).toBe("fora_garantia");
   });
 
   it("FSM: bloqueia transição inválida (novo → em_reparo)", () => {

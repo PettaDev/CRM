@@ -63,6 +63,7 @@ export interface CrmActions {
   sendForm: (conversationId: string) => void;
   submitForm: (telefoneKey: string, form: ClientForm) => void;
   updateGarantia: (caseId: string, g: GarantiaInput) => void;
+  setAtivacao: (caseId: string, ativadoEm: string) => void;
   addShipment: (caseId: string, s: ShipmentInput) => void;
   sendTemplate: (conversationId: string, templateId: string) => void;
 }
@@ -178,6 +179,26 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       })
     );
     persist(crmApi.updateGarantia(caseId, g));
+  }, []);
+
+  // Gate 1 (garantia por tempo): o servidor calcula o status pelo prazo do
+  // país. Offline, deriva localmente com 12 meses para a UI não travar.
+  const setAtivacao = useCallback((caseId: string, ativadoEm: string) => {
+    const exp = new Date(`${ativadoEm}T00:00:00`);
+    exp.setMonth(exp.getMonth() + 12);
+    const local = {
+      ativadoEm,
+      garantiaExpiraEm: exp.toISOString().slice(0, 10),
+      garantiaTempo: (new Date() > exp ? "expirada" : "dentro") as
+        | "expirada"
+        | "dentro",
+      updatedAt: new Date().toISOString(),
+    };
+    setCases((prev) => patchById(prev, caseId, local));
+    void crmApi
+      .setAtivacao(caseId, ativadoEm)
+      .then((updated) => setCases((prev) => patchById(prev, updated.id, updated)))
+      .catch(() => {});
   }, []);
 
   const addShipment = useCallback((caseId: string, s: ShipmentInput) => {
@@ -310,6 +331,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       updateCaseStatus,
       addCase,
       updateGarantia,
+      setAtivacao,
       addShipment,
       sendMessage,
       markRead,
@@ -321,6 +343,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       updateCaseStatus,
       addCase,
       updateGarantia,
+      setAtivacao,
       addShipment,
       sendMessage,
       markRead,

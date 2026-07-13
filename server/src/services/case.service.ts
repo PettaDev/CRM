@@ -58,6 +58,9 @@ export class CaseService {
       garantiaAberto: false,
       foraGarantia: false,
       aparelhoLiga: true,
+      ativadoEm: null,
+      garantiaTempo: "pendente",
+      garantiaExpiraEm: null,
       validadoEm: null,
       createdAt: now,
       updatedAt: now,
@@ -77,6 +80,21 @@ export class CaseService {
         `Transição de status inválida: ${existing.status} → ${dto.status}.`
       );
     }
+
+    // GATE 1 — garantia por tempo: só valida (libera envio) quem está dentro
+    // do prazo. Expirou → nem precisa enviar (caminho novo → fora_garantia).
+    if (dto.status === "validado" && existing.status === "novo") {
+      if (existing.garantiaTempo === "pendente") {
+        throw new ConflictError(
+          "Verifique a garantia por tempo antes de validar: informe a data de ativação/compra do aparelho (Gate 1)."
+        );
+      }
+      if (existing.garantiaTempo === "expirada") {
+        throw new ConflictError(
+          `Garantia por tempo expirada em ${existing.garantiaExpiraEm} — não envie o aparelho. Use "Fora de garantia" ou ofereça reparo pago.`
+        );
+      }
+    }
     const now = new Date().toISOString();
     this.repo.appendStatus(id, dto.status, now, {
       status: dto.status,
@@ -84,6 +102,14 @@ export class CaseService {
       by: dto.by,
       note: dto.note,
     });
+    return this.getById(id);
+  }
+
+  // Gate 1: registra a data de ativação/compra — o status (dentro/expirada) é
+  // derivado na leitura a partir do prazo de garantia do país.
+  setAtivacao(id: string, ativadoEm: string): ServiceCase {
+    if (!this.repo.findById(id)) throw new NotFoundError("Caso", id);
+    this.repo.updateAtivacao(id, ativadoEm, new Date().toISOString());
     return this.getById(id);
   }
 

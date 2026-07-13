@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS cases (
   garantia_agua   INTEGER NOT NULL DEFAULT 0,
   garantia_aberto INTEGER NOT NULL DEFAULT 0,
   aparelho_liga   INTEGER NOT NULL DEFAULT 1,
+  ativado_em      TEXT, -- data de ativação/compra (Gate 1: garantia por tempo)
   validado_em     TEXT,
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL

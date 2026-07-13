@@ -51,7 +51,8 @@ export const STATUS_META: Record<CaseStatus, StatusMeta> = {
 
 // Máquina de estados (espelha o backend). Usada para guiar o dropdown de status.
 export const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
-  novo: ["validado", "cancelado"],
+  // fora_garantia direto de novo = expirou por TEMPO (Gate 1) — sem coleta.
+  novo: ["validado", "fora_garantia", "cancelado"],
   validado: ["aguardando_envio", "triagem", "cancelado"],
   aguardando_envio: ["em_transito", "cancelado"],
   em_transito: ["recebido", "cancelado"],

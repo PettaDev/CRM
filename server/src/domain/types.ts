@@ -77,6 +77,10 @@ export interface ServiceCase {
   garantiaAberto: boolean;
   foraGarantia: boolean; // derivado: queda || agua || aberto
   aparelhoLiga: boolean; // direciona a instrução de IMEI/SN (*#06# x caixa)
+  // Gate 1 — garantia por TEMPO (pré-envio). Status derivado da ativação.
+  ativadoEm: string | null; // data de ativação/compra (yyyy-mm-dd)
+  garantiaTempo: "pendente" | "dentro" | "expirada"; // derivado
+  garantiaExpiraEm: string | null; // derivado: ativação + prazo do país
   validadoEm: string | null; // gate: libera o envio do endereço dos Correios
   createdAt: string;
   updatedAt: string;

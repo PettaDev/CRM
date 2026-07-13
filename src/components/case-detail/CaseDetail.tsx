@@ -5,6 +5,7 @@ import { formatDateTime } from "../../lib/meta";
 import CaseInfoGrid from "./CaseInfoGrid";
 import DefeitoCard from "./DefeitoCard";
 import StatusUpdateCard from "./StatusUpdateCard";
+import WarrantyGateCard from "./WarrantyGateCard";
 import WarrantyTriageCard from "./WarrantyTriageCard";
 import ShipmentCard from "./ShipmentCard";
 import CaseTimeline from "./CaseTimeline";
@@ -53,6 +54,7 @@ export default function CaseDetail() {
         <div className="stack-lg">
           <CaseInfoGrid key={`info-${caso.id}`} caso={caso} />
           <DefeitoCard defeito={caso.defeito} />
+          <WarrantyGateCard key={`gate-${caso.id}`} caso={caso} />
           <StatusUpdateCard
             key={`status-${caso.id}`}
             caseId={caso.id}

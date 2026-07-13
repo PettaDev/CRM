@@ -50,6 +50,8 @@ export const crmApi = {
     http.patch<ServiceCase>(`/cases/${id}/status`, { status, by, note }),
   updateGarantia: (id: string, g: GarantiaInput) =>
     http.patch<ServiceCase>(`/cases/${id}/garantia`, g),
+  setAtivacao: (id: string, ativadoEm: string) =>
+    http.patch<ServiceCase>(`/cases/${id}/ativacao`, { ativadoEm }),
   addShipment: (id: string, s: ShipmentInput) =>
     http.post<ServiceCase>(`/cases/${id}/shipments`, s),
   findByImei: (imei: string) =>

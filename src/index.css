@@ -1676,6 +1676,17 @@ textarea.input {
   margin: 0 0 6px;
 }
 
+/* ── Gate 1: garantia por tempo ── */
+.gate-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+.gate-row .field {
+  flex: 1;
+  max-width: 240px;
+}
+
 /* ── Planilhas (grade editável) ── */
 .sheet-tabs {
   display: flex;

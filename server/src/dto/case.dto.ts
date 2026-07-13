@@ -42,6 +42,14 @@ export const createCaseSchema = z.object({
 });
 export type CreateCaseDto = z.infer<typeof createCaseSchema>;
 
+// Gate 1: data de ativação/compra do aparelho (garantia por tempo).
+export const ativacaoSchema = z.object({
+  ativadoEm: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (use aaaa-mm-dd)."),
+});
+export type AtivacaoDto = z.infer<typeof ativacaoSchema>;
+
 export const updateStatusSchema = z.object({
   status: caseStatusSchema,
   by: z.string().min(1, "Informe o responsável pela mudança."),

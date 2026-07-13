@@ -17,6 +17,8 @@ import type {
   Shipment,
   StatusEvent,
 } from "../src/domain/types";
+import { computeWarranty } from "../src/domain/warranty";
+import { phoneKey } from "../src/utils/phone";
 
 export class FakeCaseRepository implements CaseRepository {
   store = new Map<string, ServiceCase>();
@@ -55,6 +57,15 @@ export class FakeCaseRepository implements CaseRepository {
     c.garantiaAberto = g.aberto;
     c.aparelhoLiga = g.aparelhoLiga;
     c.foraGarantia = g.queda || g.agua || g.aberto;
+    c.updatedAt = updatedAt;
+  }
+  updateAtivacao(id: string, ativadoEm: string, updatedAt: string): void {
+    const c = this.store.get(id);
+    if (!c) return;
+    const w = computeWarranty(ativadoEm, c.pais);
+    c.ativadoEm = ativadoEm;
+    c.garantiaTempo = w.status;
+    c.garantiaExpiraEm = w.expiraEm;
     c.updatedAt = updatedAt;
   }
   nextId(): string {
@@ -109,6 +120,21 @@ export class FakeConversationRepository implements ConversationRepository {
   markRead(conversationId: string): void {
     const c = this.store.get(conversationId);
     if (c) c.unread = 0;
+  }
+  findByPhoneKey(key: string): Conversation | null {
+    return (
+      [...this.store.values()].find((c) => phoneKey(c.telefone) === key) ?? null
+    );
+  }
+  create(conv: Conversation): void {
+    this.store.set(conv.id, conv);
+  }
+  addInboundMessage(conversationId: string, message: ChatMessage): void {
+    const c = this.store.get(conversationId);
+    if (!c) return;
+    c.messages.push(message);
+    c.lastAt = message.at;
+    c.unread += 1;
   }
 }
 

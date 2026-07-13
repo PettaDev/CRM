@@ -6,6 +6,7 @@ import type {
   ServiceCase,
   StatusEvent,
 } from "../domain/types";
+import { computeWarranty } from "../domain/warranty";
 
 interface CaseRow {
   id: string;
@@ -27,6 +28,7 @@ interface CaseRow {
   garantia_agua: number;
   garantia_aberto: number;
   aparelho_liga: number;
+  ativado_em: string | null;
   validado_em: string | null;
   created_at: string;
   updated_at: string;
@@ -62,6 +64,8 @@ export interface CaseRepository {
     event: StatusEvent
   ): void;
   updateGarantia(id: string, g: GarantiaInput, updatedAt: string): void;
+  /** Gate 1: registra a data de ativação/compra (garantia por tempo). */
+  updateAtivacao(id: string, ativadoEm: string, updatedAt: string): void;
   nextId(): string;
 }
 
@@ -177,6 +181,12 @@ export class SqliteCaseRepository implements CaseRepository {
       .run(g.queda ? 1 : 0, g.agua ? 1 : 0, g.aberto ? 1 : 0, g.aparelhoLiga ? 1 : 0, updatedAt, id);
   }
 
+  updateAtivacao(id: string, ativadoEm: string, updatedAt: string): void {
+    this.db
+      .prepare("UPDATE cases SET ativado_em = ?, updated_at = ? WHERE id = ?")
+      .run(ativadoEm, updatedAt, id);
+  }
+
   nextId(): string {
     const rows = this.db.prepare("SELECT id FROM cases").all() as { id: string }[];
     const max = rows.reduce((acc, r) => {
@@ -216,6 +226,9 @@ export class SqliteCaseRepository implements CaseRepository {
       // Conclusão DERIVADA — não persistida, sempre coerente com as causas.
       foraGarantia: !!(r.garantia_queda || r.garantia_agua || r.garantia_aberto),
       aparelhoLiga: !!r.aparelho_liga,
+      ativadoEm: r.ativado_em,
+      garantiaTempo: computeWarranty(r.ativado_em, r.pais).status,
+      garantiaExpiraEm: computeWarranty(r.ativado_em, r.pais).expiraEm,
       validadoEm: r.validado_em,
       createdAt: r.created_at,
       updatedAt: r.updated_at,

@@ -49,6 +49,10 @@ export interface ServiceCase {
   id: string; // ex.: "CC-2026-0007"
   loteId?: string | null; // remessa que agrupa casos de um mesmo envio
   pais?: string; // código do país (BR, AR, …)
+  // Gate 1 — garantia por TEMPO (pré-envio), derivada da data de ativação.
+  ativadoEm?: string | null;
+  garantiaTempo?: "pendente" | "dentro" | "expirada";
+  garantiaExpiraEm?: string | null;
   cliente: string;
   telefone: string;
   cidade: string;

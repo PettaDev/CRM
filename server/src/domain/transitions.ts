@@ -8,7 +8,9 @@ import type { CaseStatus } from "./types";
 // ───────────────────────────────────────────────────────────────────────────
 
 export const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
-  novo: ["validado", "cancelado"],
+  // "fora_garantia" direto de "novo" = expirou por TEMPO (Gate 1) — o aparelho
+  // nem chega a ser enviado ("se passou a por tempo, nem precisa enviar").
+  novo: ["validado", "fora_garantia", "cancelado"],
   validado: ["aguardando_envio", "triagem", "cancelado"],
   aguardando_envio: ["em_transito", "cancelado"],
   em_transito: ["recebido", "cancelado"],
