@@ -1639,6 +1639,12 @@ textarea.input {
   }
 }
 
+.page-head-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 /* ── Formulário: múltiplos aparelhos (lojas) ── */
 .device-block {
   border: 1px solid var(--border);

@@ -1,7 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCrm } from "../context/CrmContext";
+import { useAuth } from "../auth/AuthContext";
+import { isGestor } from "../auth/roles";
 import { useT } from "../settings/SettingsContext";
+import { exportWeeklyReport } from "../lib/weeklyReport";
 import StatusBadge from "../components/StatusBadge";
 import {
   AREAS,
@@ -15,7 +18,18 @@ import type { Area, CaseStatus } from "../types";
 
 export default function Dashboard() {
   const { cases } = useCrm();
+  const { user } = useAuth();
   const { t } = useT();
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await exportWeeklyReport(cases);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const abertos = cases.filter((c) => isOpen(c.status)).length;
@@ -55,9 +69,16 @@ export default function Dashboard() {
           <h1>{t("dash.title")}</h1>
           <p className="muted">{t("dash.subtitle")}</p>
         </div>
-        <Link to="/casos" className="btn btn-primary">
-          {t("common.viewAllCases")}
-        </Link>
+        <div className="page-head-actions">
+          {isGestor(user) && (
+            <button className="btn" onClick={handleExport} disabled={exporting}>
+              {exporting ? "…" : t("dash.export")}
+            </button>
+          )}
+          <Link to="/casos" className="btn btn-primary">
+            {t("common.viewAllCases")}
+          </Link>
+        </div>
       </div>
 
       <div className="kpi-grid">
