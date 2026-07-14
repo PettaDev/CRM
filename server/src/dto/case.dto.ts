@@ -17,8 +17,11 @@ export const caseStatusSchema = z.enum([
   "recebido",
   "triagem",
   "fora_garantia",
+  "orcamento_enviado",
+  "devolucao_sem_reparo",
   "em_reparo",
   "aguardando_peca",
+  "controle_qualidade",
   "pronto",
   "enviado_retorno",
   "finalizado",
@@ -49,6 +52,12 @@ export const ativacaoSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (use aaaa-mm-dd)."),
 });
 export type AtivacaoDto = z.infer<typeof ativacaoSchema>;
+
+// Orçamento do reparo pago (fluxo fora de garantia).
+export const orcamentoSchema = z.object({
+  valor: z.number().positive("O valor deve ser maior que zero."),
+});
+export type OrcamentoDto = z.infer<typeof orcamentoSchema>;
 
 export const updateStatusSchema = z.object({
   status: caseStatusSchema,

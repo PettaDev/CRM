@@ -38,6 +38,10 @@ export class CaseController {
     );
   };
 
+  setOrcamento = (req: Request, res: Response): void => {
+    res.json(this.service.setOrcamento(req.params.id as string, req.body.valor));
+  };
+
   addShipment = (req: Request, res: Response): void => {
     res.status(201).json(this.service.addShipment(req.params.id as string, req.body));
   };

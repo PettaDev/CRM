@@ -12,8 +12,11 @@ export type CaseStatus =
   | "recebido"
   | "triagem"
   | "fora_garantia"
+  | "orcamento_enviado" // fora de garantia: custo enviado, aguardando o cliente
+  | "devolucao_sem_reparo" // cliente recusou o orçamento — volta sem custo
   | "em_reparo"
   | "aguardando_peca"
+  | "controle_qualidade" // pós-reparo: testa o aparelho (reprova → volta ao reparo)
   | "pronto"
   | "enviado_retorno"
   | "finalizado"
@@ -81,6 +84,8 @@ export interface ServiceCase {
   ativadoEm: string | null; // data de ativação/compra (yyyy-mm-dd)
   garantiaTempo: "pendente" | "dentro" | "expirada"; // derivado
   garantiaExpiraEm: string | null; // derivado: ativação + prazo do país
+  // Orçamento (fluxo fora de garantia): valor do reparo pago proposto.
+  orcamentoValor: number | null;
   validadoEm: string | null; // gate: libera o envio do endereço dos Correios
   createdAt: string;
   updatedAt: string;

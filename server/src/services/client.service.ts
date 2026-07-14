@@ -75,6 +75,7 @@ export class ClientService {
         ativadoEm: null,
         garantiaTempo: "pendente",
         garantiaExpiraEm: null,
+        orcamentoValor: null,
         validadoEm: null,
         createdAt: now,
         updatedAt: now,

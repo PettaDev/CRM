@@ -68,6 +68,12 @@ export class FakeCaseRepository implements CaseRepository {
     c.garantiaExpiraEm = w.expiraEm;
     c.updatedAt = updatedAt;
   }
+  updateOrcamento(id: string, valor: number, updatedAt: string): void {
+    const c = this.store.get(id);
+    if (!c) return;
+    c.orcamentoValor = valor;
+    c.updatedAt = updatedAt;
+  }
   nextId(): string {
     this.seq += 1;
     return `CC-TEST-${String(this.seq).padStart(4, "0")}`;

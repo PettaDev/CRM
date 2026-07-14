@@ -143,10 +143,17 @@ export class ConversationService {
   ): Record<string, string> {
     const form = client?.form;
     const primeiroNome = (caso?.cliente ?? form?.nomeCompleto ?? "cliente").split(" ")[0];
+    const orcamento =
+      caso?.orcamentoValor != null
+        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+            caso.orcamentoValor
+          )
+        : "(valor não definido)";
     return {
       cliente: primeiroNome,
       nomeCompleto: form?.nomeCompleto ?? caso?.cliente ?? "",
       caseId: caso?.id ?? "",
+      orcamento,
       marca: caso?.marca ?? form?.marca ?? "",
       modelo: caso?.modelo ?? form?.modelo ?? "",
       imei: caso?.imei || form?.imei1 || "",

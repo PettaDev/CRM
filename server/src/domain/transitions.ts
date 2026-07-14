@@ -16,9 +16,16 @@ export const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
   em_transito: ["recebido", "cancelado"],
   recebido: ["triagem", "cancelado"],
   triagem: ["em_reparo", "fora_garantia", "aguardando_peca", "cancelado"],
-  fora_garantia: ["em_reparo", "enviado_retorno", "cancelado"],
-  em_reparo: ["aguardando_peca", "pronto", "cancelado"],
-  aguardando_peca: ["em_reparo", "pronto", "cancelado"],
+  // Fora de garantia (mau uso/tempo): oferece reparo PAGO via orçamento.
+  fora_garantia: ["orcamento_enviado", "em_reparo", "enviado_retorno", "cancelado"],
+  // Cliente aprova → reparo; recusa → devolução sem custo.
+  orcamento_enviado: ["em_reparo", "devolucao_sem_reparo", "cancelado"],
+  devolucao_sem_reparo: ["enviado_retorno", "finalizado", "cancelado"],
+  // Reparo SEMPRE passa pelo controle de qualidade antes de "pronto".
+  em_reparo: ["aguardando_peca", "controle_qualidade", "cancelado"],
+  aguardando_peca: ["em_reparo", "controle_qualidade", "cancelado"],
+  // QC: aprovado → pronto; reprovado → volta ao reparo (loop).
+  controle_qualidade: ["pronto", "em_reparo", "cancelado"],
   pronto: ["enviado_retorno", "finalizado", "cancelado"],
   enviado_retorno: ["finalizado", "cancelado"],
   finalizado: [],

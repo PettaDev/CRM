@@ -7,6 +7,7 @@ import DefeitoCard from "./DefeitoCard";
 import StatusUpdateCard from "./StatusUpdateCard";
 import WarrantyGateCard from "./WarrantyGateCard";
 import WarrantyTriageCard from "./WarrantyTriageCard";
+import BudgetCard from "./BudgetCard";
 import ShipmentCard from "./ShipmentCard";
 import CaseTimeline from "./CaseTimeline";
 import WhatsAppAutomationsCard from "./WhatsAppAutomationsCard";
@@ -62,6 +63,7 @@ export default function CaseDetail() {
             responsavel={caso.responsavel}
           />
           <WarrantyTriageCard key={`warranty-${caso.id}`} caso={caso} />
+          <BudgetCard key={`budget-${caso.id}`} caso={caso} />
           <ShipmentCard key={`ship-${caso.id}`} caso={caso} />
           <CaseTimeline historico={caso.historico} />
         </div>

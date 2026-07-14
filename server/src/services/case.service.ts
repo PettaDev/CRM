@@ -61,6 +61,7 @@ export class CaseService {
       ativadoEm: null,
       garantiaTempo: "pendente",
       garantiaExpiraEm: null,
+      orcamentoValor: null,
       validadoEm: null,
       createdAt: now,
       updatedAt: now,
@@ -78,6 +79,13 @@ export class CaseService {
     if (!canTransition(existing.status, dto.status)) {
       throw new ConflictError(
         `Transição de status inválida: ${existing.status} → ${dto.status}.`
+      );
+    }
+
+    // ORÇAMENTO — só dá para enviar o orçamento ao cliente com o valor definido.
+    if (dto.status === "orcamento_enviado" && existing.orcamentoValor == null) {
+      throw new ConflictError(
+        "Informe o valor do orçamento antes de enviá-lo ao cliente."
       );
     }
 
@@ -110,6 +118,13 @@ export class CaseService {
   setAtivacao(id: string, ativadoEm: string): ServiceCase {
     if (!this.repo.findById(id)) throw new NotFoundError("Caso", id);
     this.repo.updateAtivacao(id, ativadoEm, new Date().toISOString());
+    return this.getById(id);
+  }
+
+  // Orçamento do reparo pago (fluxo fora de garantia).
+  setOrcamento(id: string, valor: number): ServiceCase {
+    if (!this.repo.findById(id)) throw new NotFoundError("Caso", id);
+    this.repo.updateOrcamento(id, valor, new Date().toISOString());
     return this.getById(id);
   }
 

@@ -29,6 +29,7 @@ interface CaseRow {
   garantia_aberto: number;
   aparelho_liga: number;
   ativado_em: string | null;
+  orcamento_valor: number | null;
   validado_em: string | null;
   created_at: string;
   updated_at: string;
@@ -66,6 +67,8 @@ export interface CaseRepository {
   updateGarantia(id: string, g: GarantiaInput, updatedAt: string): void;
   /** Gate 1: registra a data de ativação/compra (garantia por tempo). */
   updateAtivacao(id: string, ativadoEm: string, updatedAt: string): void;
+  /** Orçamento do reparo pago (fluxo fora de garantia). */
+  updateOrcamento(id: string, valor: number, updatedAt: string): void;
   nextId(): string;
 }
 
@@ -187,6 +190,12 @@ export class SqliteCaseRepository implements CaseRepository {
       .run(ativadoEm, updatedAt, id);
   }
 
+  updateOrcamento(id: string, valor: number, updatedAt: string): void {
+    this.db
+      .prepare("UPDATE cases SET orcamento_valor = ?, updated_at = ? WHERE id = ?")
+      .run(valor, updatedAt, id);
+  }
+
   nextId(): string {
     const rows = this.db.prepare("SELECT id FROM cases").all() as { id: string }[];
     const max = rows.reduce((acc, r) => {
@@ -229,6 +238,7 @@ export class SqliteCaseRepository implements CaseRepository {
       ativadoEm: r.ativado_em,
       garantiaTempo: computeWarranty(r.ativado_em, r.pais).status,
       garantiaExpiraEm: computeWarranty(r.ativado_em, r.pais).expiraEm,
+      orcamentoValor: r.orcamento_valor,
       validadoEm: r.validado_em,
       createdAt: r.created_at,
       updatedAt: r.updated_at,

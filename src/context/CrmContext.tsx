@@ -64,6 +64,7 @@ export interface CrmActions {
   submitForm: (telefoneKey: string, form: ClientForm) => void;
   updateGarantia: (caseId: string, g: GarantiaInput) => void;
   setAtivacao: (caseId: string, ativadoEm: string) => void;
+  setOrcamento: (caseId: string, valor: number) => void;
   addShipment: (caseId: string, s: ShipmentInput) => void;
   sendTemplate: (conversationId: string, templateId: string) => void;
 }
@@ -201,6 +202,17 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  // Orçamento do reparo pago (fora de garantia): otimista + persistência.
+  const setOrcamento = useCallback((caseId: string, valor: number) => {
+    setCases((prev) =>
+      patchById(prev, caseId, {
+        orcamentoValor: valor,
+        updatedAt: new Date().toISOString(),
+      })
+    );
+    persist(crmApi.setOrcamento(caseId, valor));
+  }, []);
+
   const addShipment = useCallback((caseId: string, s: ShipmentInput) => {
     const now = new Date().toISOString();
     setCases((prev) =>
@@ -332,6 +344,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       addCase,
       updateGarantia,
       setAtivacao,
+      setOrcamento,
       addShipment,
       sendMessage,
       markRead,
@@ -344,6 +357,7 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       addCase,
       updateGarantia,
       setAtivacao,
+      setOrcamento,
       addShipment,
       sendMessage,
       markRead,

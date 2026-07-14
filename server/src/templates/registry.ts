@@ -56,6 +56,29 @@ export const TEMPLATES: TemplateDef[] = [
       "Atenção: se o aparelho sofreu queda, entrou água ou foi previamente aberto em outra assistência técnica, ele perde a garantia, não sendo possível o reparo gratuito.",
   },
   {
+    id: "orcamento",
+    nome: "Orçamento (fora de garantia)",
+    descricao: "Envia o valor do reparo pago e pede aprovação. Exige o valor definido no caso.",
+    body:
+      "{{cliente}}, a análise técnica do seu {{marca}} {{modelo}} (atendimento {{caseId}}) identificou que o reparo está FORA da garantia.\n\n" +
+      "💰 Orçamento do reparo: {{orcamento}}\n\n" +
+      "Para prosseguir, responda por escrito:\n" +
+      "• APROVO — seguimos com o reparo pago\n" +
+      "• NÃO APROVO — devolvemos o aparelho sem custo\n\n" +
+      "O orçamento é válido por 7 dias.",
+  },
+  {
+    id: "devolucao_sem_reparo",
+    nome: "Devolução sem reparo",
+    descricao: "Confirma a recusa do orçamento e a devolução sem custo.",
+    body:
+      "Tudo bem, {{cliente}}. Como o orçamento não foi aprovado, seu {{marca}} {{modelo}} será devolvido SEM custo e sem reparo (atendimento {{caseId}}).\n\n" +
+      "Para o envio de volta, confirme por escrito:\n" +
+      "• Endereço completo (rua, número, CEP)\n" +
+      "• Nome completo\n" +
+      "• CPF",
+  },
+  {
     id: "atencao_dados",
     nome: "Atenção: divergência de dados",
     descricao: "Aviso de que dados divergentes atrasam o reparo.",

@@ -55,6 +55,47 @@ describe("CaseService", () => {
     ).toThrow(ConflictError);
   });
 
+  it("Orçamento: exige valor antes de enviar; recusa vira devolução sem reparo", () => {
+    const c = service.create(baseInput);
+    // chega até fora_garantia (expirada por tempo)
+    service.setAtivacao(c.id, "2020-01-15");
+    service.changeStatus(c.id, { status: "fora_garantia", by: "Bia" });
+
+    // sem valor definido → 409
+    expect(() =>
+      service.changeStatus(c.id, { status: "orcamento_enviado", by: "Bia" })
+    ).toThrow(ConflictError);
+
+    service.setOrcamento(c.id, 249.9);
+    const o = service.changeStatus(c.id, { status: "orcamento_enviado", by: "Bia" });
+    expect(o.status).toBe("orcamento_enviado");
+    expect(o.orcamentoValor).toBe(249.9);
+
+    // cliente recusou → devolução sem custo
+    const d = service.changeStatus(c.id, { status: "devolucao_sem_reparo", by: "Bia" });
+    expect(d.status).toBe("devolucao_sem_reparo");
+  });
+
+  it("Controle de qualidade: reparo → QC; reprovado volta ao reparo; aprovado → pronto", () => {
+    const c = service.create(baseInput);
+    service.setAtivacao(c.id, new Date().toISOString().slice(0, 10));
+    service.changeStatus(c.id, { status: "validado", by: "Bia" });
+    service.changeStatus(c.id, { status: "triagem", by: "Bia" });
+    service.changeStatus(c.id, { status: "em_reparo", by: "Bia" });
+
+    // reparo não vai direto a pronto — passa pelo QC
+    expect(() =>
+      service.changeStatus(c.id, { status: "pronto", by: "Bia" })
+    ).toThrow(ConflictError);
+
+    service.changeStatus(c.id, { status: "controle_qualidade", by: "Bia" });
+    // reprovado → volta ao reparo (loop)
+    service.changeStatus(c.id, { status: "em_reparo", by: "Bia", note: "QC reprovou" });
+    service.changeStatus(c.id, { status: "controle_qualidade", by: "Bia" });
+    const p = service.changeStatus(c.id, { status: "pronto", by: "Bia" });
+    expect(p.status).toBe("pronto");
+  });
+
   it("Gate 1: garantia por tempo expirada bloqueia o envio (nem precisa enviar)", () => {
     const c = service.create(baseInput);
     const g = service.setAtivacao(c.id, "2020-01-15"); // muito além dos 12 meses

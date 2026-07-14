@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS cases (
   imei            TEXT,
   defeito         TEXT NOT NULL,
   status          TEXT NOT NULL
-                  CHECK (status IN ('novo','validado','aguardando_envio','em_transito','recebido','triagem','fora_garantia','em_reparo','aguardando_peca','pronto','enviado_retorno','finalizado','cancelado')),
+                  CHECK (status IN ('novo','validado','aguardando_envio','em_transito','recebido','triagem','fora_garantia','orcamento_enviado','devolucao_sem_reparo','em_reparo','aguardando_peca','controle_qualidade','pronto','enviado_retorno','finalizado','cancelado')),
   area            TEXT NOT NULL CHECK (area IN ('Carlcare','TFAE')),
   responsavel     TEXT NOT NULL,
   pais            TEXT NOT NULL DEFAULT 'BR',
@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS cases (
   garantia_aberto INTEGER NOT NULL DEFAULT 0,
   aparelho_liga   INTEGER NOT NULL DEFAULT 1,
   ativado_em      TEXT, -- data de ativação/compra (Gate 1: garantia por tempo)
+  orcamento_valor REAL, -- valor do reparo pago (fluxo fora de garantia)
   validado_em     TEXT,
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL
